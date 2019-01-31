@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Controller {
+public class NumberPadController {
     private StringBuffer expression = new StringBuffer();
     private AtomicInteger mouseAnchor = new AtomicInteger(0);
     private AtomicInteger mouseCaret = new AtomicInteger(0);
@@ -258,12 +258,12 @@ public class Controller {
             postfix.add(String.valueOf(opStk.pop()));
         }
 
-
+        /*
         for(Object p: postfix) {
             System.out.print(p + " ");
         }
         System.out.println();
-
+        */
 
         return postfix;
     }
