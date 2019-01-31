@@ -169,7 +169,18 @@ public class ExactNumber {
 
     // divide
     public static ExactNumber divide(ExactNumber a, ExactNumber b) throws ArithmeticException {
-        return new ExactNumber();
+        boolean isNegative = (a.isNeg ^ b.isNeg);
+        String newNume = PositiveIntegerOperation.multiple(a.numerator, b.denominator);
+        String newDeno = PositiveIntegerOperation.multiple(a.denominator, b.numerator);
+
+        ExactNumber ret = new ExactNumber(newNume, newDeno, isNegative && !PositiveIntegerOperation.isZero(newNume));
+        try {
+            ret.reduct_update();
+        } catch(ArithmeticException e) {
+            throw e;
+        }
+
+        return ret;
     }
 
     // reduct (yue fen)
@@ -178,6 +189,7 @@ public class ExactNumber {
             String gcd = PositiveIntegerOperation.gcd(numerator, denominator);
             numerator = PositiveIntegerOperation.divide(numerator, gcd);
             denominator = PositiveIntegerOperation.divide(denominator, gcd);
+            fractionStyle = toFractionStyle(numerator, denominator);
         } catch (ArithmeticException e) {
             throw e;
         }
@@ -185,7 +197,8 @@ public class ExactNumber {
 
     // convert numerator and denominator to fraction style
     private static String toFractionStyle(String a, String b) {
-        return "9";
+        // TODO
+        return a + "/" + b;
     }
 
     @Override

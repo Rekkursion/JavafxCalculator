@@ -10,7 +10,7 @@
 <?import javafx.scene.control.TextField?>
 <GridPane alignment="center" hgap="10" vgap="10" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.NumberPadController">
 
-    <TextField fx:id="txf_show" onMouseClicked="#txfClick" text="" GridPane.columnSpan="5" prefHeight="60" alignment="CENTER_RIGHT" />
+    <TextField fx:id="txf_show" onMouseClicked="#txfClick" onKeyPressed="#txfKeyPressed" text="" GridPane.columnSpan="5" prefHeight="60" alignment="CENTER_RIGHT" />
 
     <Button fx:id="btn_one" onAction="#btnClick" text="1" GridPane.columnIndex="0" GridPane.rowIndex="2" prefHeight="60" prefWidth="60" />
     <Button fx:id="btn_two" onAction="#btnClick" text="2" GridPane.columnIndex="1" GridPane.rowIndex="2" prefHeight="60" prefWidth="60" />

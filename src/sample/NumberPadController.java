@@ -4,6 +4,8 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 
 import java.util.ArrayDeque;
@@ -123,6 +125,15 @@ public class NumberPadController {
         }
     }
 
+    public void txfKeyPressed(KeyEvent keyEvent) {
+        if(keyEvent.getCode() == KeyCode.BACK_SPACE) {
+            expression.delete(0, expression.length());
+            expression.append(txf_show.getText());
+            mouseAnchor.set(Math.min(txf_show.getAnchor(), txf_show.getCaretPosition()));
+            mouseCaret.set(mouseAnchor.get());
+        }
+    }
+
     // calculate the value of the expression
     private String calc(String exp) throws NumberFormatException, ArithmeticException {
         ArrayList<Object> postfix;
@@ -148,14 +159,15 @@ public class NumberPadController {
                             result = ExactNumber.add(num1, num2);
                             break;
                         case '-':
+                            result = ExactNumber.minus(num1, num2);
                             break;
                         case '*':
                             result = ExactNumber.multiple(num1, num2);
                             break;
                         case '/':
+                            result = ExactNumber.divide(num1, num2);
                             break;
                     }
-
                     numStk.push(result);
                 } catch (ArithmeticException e) {
                     throw new ArithmeticException();
@@ -172,6 +184,7 @@ public class NumberPadController {
         if(numStk.size() != 1)
             throw new NumberFormatException();
 
+        // TODO
         return numStk.pop().fractionStyle;
     }
 
