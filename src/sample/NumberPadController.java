@@ -7,6 +7,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.GridPane;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -25,8 +26,10 @@ public class NumberPadController {
     @FXML TextField txf_show;
     @FXML Button btn_one, btn_two, btn_three, btn_four, btn_five, btn_six, btn_seven, btn_eight, btn_nine, btn_zero;
     @FXML Button btn_dot, btn_plus, btn_div, btn_multi, btn_minus, btn_calc, btn_parens, btn_backspace, btn_clear;
+    @FXML Button btn_save_as_var;
+    @FXML GridPane gpn_number_pad;
 
-    public void btnClick(ActionEvent actionEvent) {
+    public void numberPadButtonsClick(ActionEvent actionEvent) {
         Object clickedBtn = actionEvent.getSource();
         String insertValue = "";
 
@@ -159,6 +162,14 @@ public class NumberPadController {
         txf_show.positionCaret(mouseCaret.get());
     }
 
+    public void saveAsVarButtonClick(ActionEvent actionEvent) {
+        Object clickedBtn = actionEvent.getSource();
+        if(clickedBtn == btn_save_as_var && Main.saveAsVarStage != null) {
+            gpn_number_pad.setDisable(true);
+            Main.saveAsVarStage.show();
+        }
+    }
+
     public void txfClick(MouseEvent mouseEvent) {
         if(mouseEvent.getEventType() == MouseEvent.MOUSE_CLICKED) {
             mouseAnchor.set(Math.min(txf_show.getAnchor(), txf_show.getCaretPosition()));
@@ -236,7 +247,6 @@ public class NumberPadController {
         if(numStk.size() != 1)
             throw new NumberFormatException();
 
-        // TODO
         ExactNumber ret = numStk.pop();
         System.err.println(ret.fractionStyle);
         return ret.fractionStyle;
@@ -328,11 +338,11 @@ public class NumberPadController {
             postfix.add(String.valueOf(opStk.pop()));
         }
 
-
+        /*
         for(Object p: postfix)
             System.out.print(p + " ");
         System.out.println();
-
+        */
 
         return postfix;
     }
