@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 
 public class Main extends Application {
@@ -11,6 +12,9 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
+
+        HBox topHbox = (HBox)root.lookup("top_hbox");
+
         primaryStage.setTitle("Javafx Calculator");
         primaryStage.setScene(new Scene(root, 600, 550));
         primaryStage.show();

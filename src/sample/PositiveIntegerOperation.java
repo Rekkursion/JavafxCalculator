@@ -82,15 +82,17 @@ public class PositiveIntegerOperation {
         return resultBuf.toString();
     }
 
-    // integer divide
-    public static String divide(String a, String b) throws ArithmeticException {
+    // integer divide and mod
+    public static String[] divideAndMod(String a, String b) throws ArithmeticException {
         if(isZero(b))
             throw new ArithmeticException();
 
         a = removePreZero(a);
         b = removePreZero(b);
-        if(compareTwoPositiveIntegers(a, b) < 0)
-            return "0";
+        if(compareTwoPositiveIntegers(a, b) < 0) {
+            String[] ret = {"0", a};
+            return ret;
+        }
 
         int cursor = b.length();
         StringBuilder resultBuf = new StringBuilder();
@@ -112,33 +114,46 @@ public class PositiveIntegerOperation {
             //System.out.println("quot = " + quot + " | a = " + a);
         }
 
-        return PositiveIntegerOperation.removePreZero(resultBuf.toString());
+        String[] ret = {removePreZero(resultBuf.toString()), removePreZero(a)};
+        return ret;
+    }
+
+    // integer divide
+    public static String divide(String a, String b) throws ArithmeticException {
+        return divideAndMod(a, b)[0];
+    }
+
+    // real divide
+    public static String divide(String a, String b, int precision) throws ArithmeticException {
+        String[] div_mod = divideAndMod(a, b);
+        String intDivResult = div_mod[0];
+        String frcDivResult;
+        String minuend = div_mod[1];
+        StringBuilder frcDivResultBuf = new StringBuilder();
+        int cursor = 0;
+
+        while(cursor < precision) {
+            minuend += "0";
+
+            int quot = 0;
+            while(compareTwoPositiveIntegers(minuend, b) >= 0) {
+                ++quot;
+                minuend = minus(minuend, b);
+            }
+
+            frcDivResultBuf.append(quot);
+            ++cursor;
+        }
+
+        frcDivResult = frcDivResultBuf.toString();
+        frcDivResult = removePostZero(frcDivResult);
+
+        return isZero(frcDivResult) ? intDivResult : intDivResult + "." + frcDivResult;
     }
 
     // integer mod
     public static String mod(String a, String b) throws ArithmeticException {
-        if(isZero(b))
-            throw new ArithmeticException();
-
-        a = removePreZero(a);
-        b = removePreZero(b);
-        if(compareTwoPositiveIntegers(a, b) < 0)
-            return a;
-
-        int cursor = b.length();
-
-        while(cursor <= a.length()) {
-            String minuend = a.substring(0, cursor);
-            String subtrahend = b;
-
-            while(compareTwoPositiveIntegers(minuend, subtrahend) >= 0)
-                minuend = minus(minuend, subtrahend);
-            a = new StringBuilder(a).replace(0, cursor, Stream.iterate("0", ch -> "0").limit(cursor - minuend.length()).collect(Collectors.joining("")) + minuend).toString();
-
-            ++cursor;
-        }
-
-        return removePreZero(a);
+        return divideAndMod(a, b)[1];
     }
 
     // get GCD

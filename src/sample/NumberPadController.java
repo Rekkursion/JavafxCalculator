@@ -24,7 +24,7 @@ public class NumberPadController {
 
     @FXML TextField txf_show;
     @FXML Button btn_one, btn_two, btn_three, btn_four, btn_five, btn_six, btn_seven, btn_eight, btn_nine, btn_zero;
-    @FXML Button btn_dot, btn_plus, btn_div, btn_multi, btn_minus, btn_calc, btn_parens;
+    @FXML Button btn_dot, btn_plus, btn_div, btn_multi, btn_minus, btn_calc, btn_parens, btn_backspace, btn_clear;
 
     public void btnClick(ActionEvent actionEvent) {
         Object clickedBtn = actionEvent.getSource();
@@ -62,6 +62,10 @@ public class NumberPadController {
             insertValue = "*";
         else if(clickedBtn == btn_parens)
             insertValue = "()";
+        else if(clickedBtn == btn_backspace)
+            insertValue = "<-";
+        else if(clickedBtn == btn_clear)
+            insertValue = "C";
         else if(clickedBtn == btn_calc) {
             String result;
             errorHappened = false;
@@ -81,6 +85,7 @@ public class NumberPadController {
             mouseCaret.set(mouseAnchor.get());
         }
 
+        // parentheses
         if(insertValue.equals("()")) {
             if(errorHappened) {
                 expression.delete(0, expression.length());
@@ -89,12 +94,46 @@ public class NumberPadController {
 
                 errorHappened = false;
             }
-
             expression.insert(mouseAnchor.get(), "(");
             expression.insert(mouseCaret.get() + 1, ")");
-            mouseAnchor.set(mouseCaret.get() + 2);
-            mouseCaret.addAndGet(2);
+            if(mouseAnchor.get() == mouseCaret.get()) {
+                mouseAnchor.set(mouseCaret.get() + 1);
+                mouseCaret.addAndGet(1);
+            }
+            else {
+                mouseAnchor.set(mouseCaret.get() + 2);
+                mouseCaret.addAndGet(2);
+            }
         }
+        // delete partial
+        else if(insertValue.equals("<-")) {
+            if(errorHappened) {
+                expression.delete(0, expression.length());
+                mouseCaret.set(0);
+                mouseAnchor.set(0);
+
+                errorHappened = false;
+            }
+
+            if(mouseAnchor.get() == mouseCaret.get()) {
+                if(mouseAnchor.get() > 0) {
+                    expression.delete(mouseAnchor.get() - 1, mouseCaret.get());
+                    mouseAnchor.addAndGet(-1);
+                    mouseCaret.set(mouseAnchor.get());
+                }
+            }
+            else {
+                expression.delete(mouseAnchor.get(), mouseCaret.get());
+                mouseCaret.set(mouseAnchor.get());
+            }
+        }
+        // delete all
+        else if(insertValue.equals("C")) {
+            expression.delete(0, expression.length());
+            mouseCaret.set(0);
+            mouseAnchor.set(0);
+        }
+        // others
         else if(!insertValue.equals("")) {
             if(errorHappened) {
                 expression.delete(0, expression.length());
@@ -116,6 +155,8 @@ public class NumberPadController {
         }
 
         txf_show.setText(expression.toString());
+        txf_show.requestFocus();
+        txf_show.positionCaret(mouseCaret.get());
     }
 
     public void txfClick(MouseEvent mouseEvent) {
@@ -149,10 +190,12 @@ public class NumberPadController {
             // operators
             if(ele instanceof String) {
                 try {
-                    ExactNumber num2 = numStk.pop();
-                    ExactNumber num1 = numStk.pop();
-                    ExactNumber result = new ExactNumber();
                     String op = (String)ele;
+                    ExactNumber num2 = numStk.pop();
+                    ExactNumber num1 = null;
+                    if(op.charAt(0) != 'p' && op.charAt(0) != 'n')
+                         num1 = numStk.pop();
+                    ExactNumber result = null;
 
                     switch(op.charAt(0)) {
                         case '+':
@@ -167,7 +210,16 @@ public class NumberPadController {
                         case '/':
                             result = ExactNumber.divide(num1, num2);
                             break;
+                        case 'p':
+                            result = new ExactNumber(num2);
+                            break;
+                        case 'n':
+                            result = new ExactNumber(num2.numerator, num2.denominator, !num2.isNeg);
+                            break;
                     }
+
+                    if(result == null)
+                        throw new NumberFormatException();
                     numStk.push(result);
                 } catch (ArithmeticException e) {
                     throw new ArithmeticException();
@@ -185,7 +237,9 @@ public class NumberPadController {
             throw new NumberFormatException();
 
         // TODO
-        return numStk.pop().fractionStyle;
+        ExactNumber ret = numStk.pop();
+        System.err.println(ret.fractionStyle);
+        return ret.fractionStyle;
     }
 
     // convert the expression to the postfix format
@@ -252,8 +306,11 @@ public class NumberPadController {
                     if((c == '+' || c == '-') && (k == 0 || exp.charAt(k - 1) == '(' || exp.charAt(k - 1) == '+' || exp.charAt(k - 1) == '-' || exp.charAt(k - 1) == '*' || exp.charAt(k - 1) == '/'))
                         c = c == '+' ? 'p' : 'n'; // p: positive, n: negative
 
-                    while(!opStk.isEmpty() && opPriority.get(opStk.peek()) >= opPriority.get(c))
+                    while(!opStk.isEmpty() && opPriority.get(opStk.peek()) >= opPriority.get(c)) {
+                        if(opPriority.get(opStk.peek()) == 3 && opPriority.get(c) == 3)
+                            break;
                         postfix.add(String.valueOf(opStk.pop()));
+                    }
                     opStk.push(c);
                 } catch (Exception e) {
                     throw new NumberFormatException();
@@ -271,12 +328,11 @@ public class NumberPadController {
             postfix.add(String.valueOf(opStk.pop()));
         }
 
-        /*
-        for(Object p: postfix) {
+
+        for(Object p: postfix)
             System.out.print(p + " ");
-        }
         System.out.println();
-        */
+
 
         return postfix;
     }

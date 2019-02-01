@@ -12,6 +12,14 @@ public class ExactNumber {
     // default constructor
     public ExactNumber() { this("1", "1", false); }
 
+    // copy constructor
+    public ExactNumber(ExactNumber old) {
+        numerator = old.numerator;
+        denominator = old.denominator;
+        isNeg = old.isNeg;
+        fractionStyle = old.fractionStyle;
+    }
+
     // constructor: 2 strings as numerator and denominator respectively
     public ExactNumber(String nume, String deno) {
         boolean numeIsNeg = (nume.length() > 0 && nume.charAt(0) == '-');
@@ -20,13 +28,14 @@ public class ExactNumber {
         numerator = PositiveIntegerOperation.removePreZero(numeIsNeg ? nume.substring(1) : nume);
         denominator = PositiveIntegerOperation.removePreZero(denoIsNeg ? deno.substring(1) : deno);
         isNeg = (numeIsNeg ^ denoIsNeg) && !PositiveIntegerOperation.isZero(numerator);
-        fractionStyle = ExactNumber.toFractionStyle(numerator, denominator);
+        toFractionStyle_update(numerator, denominator);
     }
 
     // constructor: 2 strings as numerator and denominator respectively, and 1 boolean as if it's negative
     public ExactNumber(String nume, String deno, boolean isNegative) {
         this(nume, deno);
         isNeg = isNegative;
+        toFractionStyle_update(numerator, denominator);
     }
 
     // constructor: a string as a fraction number
@@ -66,7 +75,7 @@ public class ExactNumber {
             if(PositiveIntegerOperation.isZero(numerator))
                 isNeg = false;
         }
-        fractionStyle = ExactNumber.toFractionStyle(numerator, denominator);
+        toFractionStyle_update(numerator, denominator);
 
         //System.err.println((isNeg ? "-" : "") + numerator + "/" + denominator);
     }
@@ -189,16 +198,21 @@ public class ExactNumber {
             String gcd = PositiveIntegerOperation.gcd(numerator, denominator);
             numerator = PositiveIntegerOperation.divide(numerator, gcd);
             denominator = PositiveIntegerOperation.divide(denominator, gcd);
-            fractionStyle = toFractionStyle(numerator, denominator);
+            toFractionStyle_update(numerator, denominator);
         } catch (ArithmeticException e) {
             throw e;
         }
     }
 
+    // convert numerator and denominator to fraction style without signed
+    private void toFractionStyleWithoutSigned_update(String a, String b) throws ArithmeticException {
+        fractionStyle = PositiveIntegerOperation.divide(a, b, 10);
+    }
+
     // convert numerator and denominator to fraction style
-    private static String toFractionStyle(String a, String b) {
-        // TODO
-        return a + "/" + b;
+    private void toFractionStyle_update(String a, String b) throws ArithmeticException {
+        toFractionStyleWithoutSigned_update(a, b);
+        fractionStyle = (isNeg ? "-" : "") + fractionStyle;
     }
 
     @Override
