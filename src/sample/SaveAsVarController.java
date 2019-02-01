@@ -21,9 +21,9 @@ public class SaveAsVarController {
     @FXML
     public void initialize() {
         // set the text of rules
-        String[] varNameRules = {"- Numbers(0-9), alphabets(a-zA-Z), and underline(_) only.",
-                "- The first character might not be a number.",
-                "- Minimum length is 1, maximum length is 100."};
+        String[] varNameRules = {"- Alphabets(a-zA-Z) and underline(_) only.",
+                "- There must be at least one alphabet.",
+                "- Minimum and maximum length is 1 and 100 respectively."};
         lbl_var_name_rule.setText(Arrays.stream(varNameRules).collect(Collectors.joining("\n")));
         btn_confirm_name.setDisable(true);
     }
@@ -46,6 +46,6 @@ public class SaveAsVarController {
     private boolean isValidName() {
         if(varName == null)
             return false;
-        return varName.matches("^[a-zA-Z_][a-zA-Z_0-9]*");
+        return varName.matches("([a-zA-Z_]*[a-zA-Z][a-zA-Z_]*){1,100}");
     }
 }
