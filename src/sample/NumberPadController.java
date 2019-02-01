@@ -4,20 +4,18 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.*;
 import javafx.scene.control.Button;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class NumberPadController {
@@ -37,15 +35,26 @@ public class NumberPadController {
     @FXML BorderPane root_pane;
     @FXML GridPane gpn_number_pad;
 
-    @FXML private TableView<Variable> tbv_vars;
+    @FXML TableView<Variable> tbv_vars;
     @FXML private TableColumn<Variable, String> tbc_identity;
     @FXML private TableColumn<Variable, String> tbc_value;
 
     @FXML
     public void initialize() {
-        //tbc_identity.setCellValueFactory(cellValue -> cellValue.getValue().getIdentityProperty());
-        //tbc_value.setCellValueFactory(cellValue -> cellValue.getValue().getValueProperty());
-        //tbv_vars.setItems(varList);
+        tbv_vars.setEditable(false);
+
+        tbc_identity = new TableColumn("Identity");
+        tbc_identity.setMinWidth(100);
+        tbc_identity.setCellValueFactory(new PropertyValueFactory("identity"));
+        tbc_identity.setCellFactory(TextFieldTableCell.forTableColumn());
+
+        tbc_value = new TableColumn("Value");
+        tbc_value.setMinWidth(100);
+        tbc_value.setCellValueFactory(new PropertyValueFactory("value"));
+        tbc_value.setCellFactory(TextFieldTableCell.forTableColumn());
+
+        tbv_vars.setItems(varList);
+        tbv_vars.getColumns().addAll(tbc_identity, tbc_value);
     }
 
     public void numberPadButtonsClick(ActionEvent actionEvent) {
@@ -183,10 +192,29 @@ public class NumberPadController {
 
     public void saveAsVarButtonClick(ActionEvent actionEvent) {
         Object clickedBtn = actionEvent.getSource();
-        if(clickedBtn == btn_save_as_var && Main.saveAsVarStage != null) {
-            savedValue = txf_show.getText();
-            gpn_number_pad.setDisable(true);
-            Main.saveAsVarStage.show();
+        if(clickedBtn == btn_save_as_var && Main.saveAsVarStage != null && !errorHappened && !txf_show.getText().equals("")) {
+            String result;
+            try {
+                result = calc(expression.toString());
+            } catch (ArithmeticException e) {
+                result = ARITHM_ERR_MSG;
+            } catch (NumberFormatException e) {
+                result = FORMAT_ERR_MSG;
+            }
+
+            if(result.equals(ARITHM_ERR_MSG) || result.equals(FORMAT_ERR_MSG)) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Error");
+                alert.setHeaderText("");
+                alert.setContentText("Format error or arithmetic error happened.");
+                alert.showAndWait();
+            }
+            else {
+                savedValue = result;
+                gpn_number_pad.setDisable(true);
+                Main.saveAsVarStage.setTitle("Save as variable: " + (expression.toString().equals(result) ? result : expression.toString() + " = " + result));
+                Main.saveAsVarStage.show();
+            }
         }
     }
 
@@ -197,22 +225,54 @@ public class NumberPadController {
         }
     }
 
-    public void txfKeyPressed(KeyEvent keyEvent) {
-        if(keyEvent.getCode() == KeyCode.BACK_SPACE) {
+    public void txfKeyReleased(KeyEvent keyEvent) {
+        if(keyEvent.getCode() == KeyCode.BACK_SPACE || isNumberKey(keyEvent.getCode())) {
             expression.delete(0, expression.length());
             expression.append(txf_show.getText());
             mouseAnchor.set(Math.min(txf_show.getAnchor(), txf_show.getCaretPosition()));
             mouseCaret.set(mouseAnchor.get());
         }
+        else if(keyEvent.getCode() == KeyCode.LEFT || keyEvent.getCode() == KeyCode.RIGHT || keyEvent.getCode() == KeyCode.UP || keyEvent.getCode() == KeyCode.DOWN || keyEvent.getCode() == KeyCode.HOME || keyEvent.getCode() == KeyCode.END) {
+            mouseAnchor.set(txf_show.getCaretPosition());
+            mouseCaret.set(txf_show.getCaretPosition());
+        }
+        else {
+            int tmpCaret = Math.min(mouseAnchor.get(), mouseCaret.get());
+            txf_show.setText(expression.toString());
+            mouseAnchor.set(tmpCaret);
+            mouseCaret.set(tmpCaret);
+            txf_show.positionCaret(mouseCaret.get());
+        }
     }
 
     // add new variable to varList
     public void addVariable(String identity) {
-        varList.add(new Variable(identity, savedValue));
-
-        for(Variable va: varList) {
-            System.out.println(va);
+        boolean alreadyExists = false;
+        Variable dup = null;
+        for(Variable v: varList) {
+            if(v.getIdentity().equals(identity)) {
+                alreadyExists = true;
+                dup = v;
+                break;
+            }
         }
+
+        if(alreadyExists) {
+            final Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Rewrite confirm");
+            alert.setHeaderText("");
+            alert.setContentText("There's already a variable with the same name. Do you want to rewrite the value?");
+            final Optional<ButtonType> opt = alert.showAndWait();
+            final ButtonType rtn = opt.get(); // 可以直接用「alert.getResult()」來取代
+
+            if (rtn == ButtonType.OK) {
+                dup.setValue(savedValue);
+                varList.add(new Variable(identity, savedValue));
+                varList.remove(varList.size() - 1);
+            }
+        }
+        else
+            varList.add(new Variable(identity, savedValue));
     }
 
     // calculate the value of the expression
@@ -374,5 +434,29 @@ public class NumberPadController {
         */
 
         return postfix;
+    }
+
+    // check if the key is number key or not
+    private boolean isNumberKey(KeyCode key) {
+        return (key == KeyCode.DIGIT1 ||
+                key == KeyCode.DIGIT2 ||
+                key == KeyCode.DIGIT3 ||
+                key == KeyCode.DIGIT4 ||
+                key == KeyCode.DIGIT5 ||
+                key == KeyCode.DIGIT6 ||
+                key == KeyCode.DIGIT7 ||
+                key == KeyCode.DIGIT8 ||
+                key == KeyCode.DIGIT9 ||
+                key == KeyCode.DIGIT0 ||
+                key == KeyCode.NUMPAD1 ||
+                key == KeyCode.NUMPAD2 ||
+                key == KeyCode.NUMPAD3 ||
+                key == KeyCode.NUMPAD4 ||
+                key == KeyCode.NUMPAD5 ||
+                key == KeyCode.NUMPAD6 ||
+                key == KeyCode.NUMPAD7 ||
+                key == KeyCode.NUMPAD8 ||
+                key == KeyCode.NUMPAD9 ||
+                key == KeyCode.NUMPAD0);
     }
 }

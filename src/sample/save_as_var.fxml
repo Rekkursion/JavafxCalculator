@@ -11,7 +11,7 @@
             prefHeight="400.0" prefWidth="600.0"
             style="-fx-padding: 10px;">
     <top>
-        <TextField fx:id="txf_var_name" onKeyReleased="#txfVarNameKeyReleased" text="" prefHeight="60" prefWidth="270" alignment="CENTER" />
+        <TextField fx:id="txf_var_name" onKeyReleased="#txfVarNameKeyReleased" text="" promptText="Your variable name" prefHeight="60" prefWidth="270" alignment="CENTER" />
     </top>
     <center>
         <Label fx:id="lbl_var_name_rule" />

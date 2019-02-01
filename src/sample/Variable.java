@@ -28,6 +28,10 @@ public class Variable {
         return this.value.get();
     }
 
+    public void setValue(String newValue) {
+        this.value.setValue(newValue);
+    }
+
     @Override
     public String toString() {
         return "|" + this.identity.get() + "|: " + this.value.get();

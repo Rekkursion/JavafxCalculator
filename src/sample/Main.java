@@ -18,8 +18,6 @@ public class Main extends Application {
         Parent root = numberPadLoader.load(getClass().getResource("number_pad.fxml").openStream());
         NumberPadController numberPadController = numberPadLoader.getController();
 
-        numberPadController.root_pane.getBottom().prefHeight(5.0);
-
         primaryStage.setTitle("Javafx Calculator");
         primaryStage.setScene(new Scene(root, 600, 550));
         primaryStage.show();

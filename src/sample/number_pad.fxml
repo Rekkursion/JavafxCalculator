@@ -9,7 +9,7 @@
 <BorderPane fx:id="root_pane" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.NumberPadController">
     <center>
         <GridPane fx:id="gpn_number_pad" alignment="center" hgap="10" vgap="10">
-            <TextField fx:id="txf_show" onMouseClicked="#txfClick" onKeyPressed="#txfKeyPressed" text="" GridPane.columnSpan="5" prefHeight="60" prefWidth="270" alignment="CENTER_RIGHT" />
+            <TextField fx:id="txf_show" onMouseClicked="#txfClick" onKeyReleased="#txfKeyReleased" text="" GridPane.columnSpan="5" prefHeight="60" prefWidth="270" alignment="CENTER_RIGHT" />
 
             <Button fx:id="btn_one" onAction="#numberPadButtonsClick" text="1" GridPane.columnIndex="0" GridPane.rowIndex="2" prefHeight="60" prefWidth="60" />
             <Button fx:id="btn_two" onAction="#numberPadButtonsClick" text="2" GridPane.columnIndex="1" GridPane.rowIndex="2" prefHeight="60" prefWidth="60" />
@@ -35,9 +35,9 @@
 
         </GridPane>
     </center>
-    <bottom>
-        <TableView fx:id="tbv_vars">
+    <right>
+        <TableView fx:id="tbv_vars" prefWidth="201">
 
         </TableView>
-    </bottom>
+    </right>
 </BorderPane>
