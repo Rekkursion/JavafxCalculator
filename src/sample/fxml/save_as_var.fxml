@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="sample.SaveAsVarController"
@@ -13,9 +11,11 @@
     <top>
         <TextField fx:id="txf_var_name" onKeyReleased="#txfVarNameKeyReleased" text="" promptText="Your variable name" prefHeight="60" prefWidth="270" alignment="CENTER" />
     </top>
+
     <center>
         <Label fx:id="lbl_var_name_rule" />
     </center>
+
     <bottom>
         <GridPane hgap="10" vgap="10" alignment="CENTER">
             <Button alignment="CENTER" fx:id="btn_confirm_name" onAction="#btnConfirmClick" GridPane.columnIndex="0" prefWidth="160" prefHeight="60" text="Confirm" />

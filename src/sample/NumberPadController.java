@@ -3,6 +3,7 @@ package sample;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
@@ -12,6 +13,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 
 import java.util.*;
@@ -29,68 +31,78 @@ public class NumberPadController {
     private Variable selectedVar = null;
 
     @FXML BorderPane root_pane;
+    @FXML Button btn_add_left, btn_add_cursor, btn_add_right;
+    @FXML GridPane gpn_number_pad;
     @FXML private TextField txf_show;
     @FXML private Button btn_one, btn_two, btn_three, btn_four, btn_five, btn_six, btn_seven, btn_eight, btn_nine, btn_zero;
     @FXML private Button btn_dot, btn_plus, btn_div, btn_multi, btn_minus, btn_calc, btn_parens, btn_backspace, btn_clear, btn_save_as_var;
     @FXML private VBox vbx_vars;
-    @FXML private Button btn_add_left, btn_add_cursor, btn_add_right;
 
-    @FXML private TableView<Variable> tbv_vars;
+    @FXML TableView<Variable> tbv_vars;
     @FXML private TableColumn<Variable, String> tbc_identity;
     @FXML private TableColumn<Variable, String> tbc_value;
+    @FXML private TableColumn tbc_action;
 
     @FXML
     public void initialize() {
-        tbv_vars.setEditable(false);
+        tbv_vars.setEditable(true);
 
+        // identity col
         tbc_identity = new TableColumn("Name");
-        tbc_identity.setMinWidth(99);
+        tbc_identity.setMinWidth(10);
+        tbc_identity.setPrefWidth(99);
         tbc_identity.setCellValueFactory(new PropertyValueFactory("identity"));
         tbc_identity.setCellFactory(TextFieldTableCell.forTableColumn());
+        tbc_identity.setEditable(false);
+        tbc_identity.setSortable(false);
 
+        // value col
         tbc_value = new TableColumn("Value");
-        tbc_value.setMinWidth(99);
+        tbc_value.setMinWidth(10);
+        tbc_value.setPrefWidth(99);
         tbc_value.setCellValueFactory(new PropertyValueFactory("value"));
         tbc_value.setCellFactory(TextFieldTableCell.forTableColumn());
+        tbc_value.setOnEditCommit(new EventHandler<TableColumn.CellEditEvent<Variable, String>>() {
+            @Override
+            public void handle(TableColumn.CellEditEvent<Variable, String> event) {
+                String newValue = event.getNewValue();
+                if(!newValue.matches("[+\\-]?[0-9]*.?[0-9]+") && !newValue.matches("[+\\-]?[0-9]+.?[0-9]*")) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Invalid value error");
+                    alert.setHeaderText("");
+                    alert.setContentText("It\'s an invalid value.");
+                    alert.showAndWait();
+
+                    newValue = event.getOldValue();
+                }
+                ((Variable) event.getTableView().getItems()
+                        .get(event.getTablePosition().getRow()))
+                        .setValue(newValue);
+                tbv_vars.refresh();
+            }
+        });
+        tbc_value.setSortable(false);
+
+        // action col
+        tbc_action = new TableColumn("Action");
+        tbc_action.setMinWidth(10);
+        tbc_action.setPrefWidth(99);
+        tbc_action.setCellValueFactory(new PropertyValueFactory<Variable, String>("btnDelete"));
+        tbc_action.setSortable(false);
+
+
 
         tbv_vars.setItems(varList);
-        tbv_vars.getColumns().addAll(tbc_identity, tbc_value);
+        tbv_vars.getColumns().addAll(tbc_identity, tbc_value, tbc_action);
 
         tbv_vars.setRowFactory(tv -> {
             TableRow<Variable> row = new TableRow<>();
-
             row.setOnMouseClicked(event -> {
                 if (event.getButton().equals(MouseButton.PRIMARY) && (!row.isEmpty())) {
                     Variable rowData = row.getItem();
-                    String varName = rowData.getIdentity();
                     int index = row.getIndex();
 
-                    // left button double click
-                    if(event.getClickCount() == 2) {
-                        if(errorHappened) {
-                            expression.delete(0, expression.length());
-                            mouseCaret.set(0);
-                            mouseAnchor.set(0);
-
-                            errorHappened = false;
-                        }
-
-                        expression.replace(mouseAnchor.get(), mouseCaret.get(), varName);
-                        if(mouseAnchor.get() == mouseCaret.get()) {
-                            mouseCaret.addAndGet(varName.length());
-                            mouseAnchor.set(mouseCaret.get());
-                        }
-                        else {
-                            mouseCaret.set(mouseAnchor.get() + varName.length());
-                            mouseAnchor.addAndGet(varName.length());
-                        }
-
-                        txf_show.setText(expression.toString());
-                        txf_show.requestFocus();
-                        txf_show.positionCaret(mouseCaret.get());
-                    }
-                    // general click
-                    else {
+                    if(event.getClickCount() == 1) {
                         if(tbv_vars.getSelectionModel().isSelected(index)) {
                             btn_add_left.setDisable(false);
                             btn_add_cursor.setDisable(false);
@@ -108,13 +120,15 @@ public class NumberPadController {
             return row;
         });
 
-        VBox.setMargin(tbv_vars, new Insets(10, 10, 10, 10));
-        VBox.setMargin(btn_add_left, new Insets(0, 10, 10, 10));
-        VBox.setMargin(btn_add_cursor, new Insets(0, 10, 10, 10));
-        VBox.setMargin(btn_add_right, new Insets(0, 10, 10, 10));
+        VBox.setMargin(tbv_vars, new Insets(10, 10, 10, 0));
+        VBox.setMargin(btn_add_left, new Insets(0, 10, 10, 0));
+        VBox.setMargin(btn_add_cursor, new Insets(0, 10, 10, 0));
+        VBox.setMargin(btn_add_right, new Insets(0, 10, 10, 0));
         btn_add_left.setDisable(true);
         btn_add_cursor.setDisable(true);
         btn_add_right.setDisable(true);
+
+        root_pane.getStylesheets().add(getClass().getResource("css/number_pad.css").toExternalForm());
     }
 
     public void numberPadButtonsClick(ActionEvent actionEvent) throws NumberFormatException, ArithmeticException, NoVariableException {
@@ -329,22 +343,17 @@ public class NumberPadController {
     }
 
     public void txfKeyReleased(KeyEvent keyEvent) {
-        if(keyEvent.getCode() == KeyCode.BACK_SPACE || isNumberKey(keyEvent.getCode()) || isAlphabetKey(keyEvent.getCode()) || isOperatorKey(keyEvent)) {
+        // arrow keys
+        if(keyEvent.getCode() == KeyCode.LEFT || keyEvent.getCode() == KeyCode.RIGHT || keyEvent.getCode() == KeyCode.UP || keyEvent.getCode() == KeyCode.DOWN || keyEvent.getCode() == KeyCode.HOME || keyEvent.getCode() == KeyCode.END) {
+            mouseAnchor.set(txf_show.getCaretPosition());
+            mouseCaret.set(txf_show.getCaretPosition());
+        }
+        // others
+        else {
             expression.delete(0, expression.length());
             expression.append(txf_show.getText());
             mouseAnchor.set(Math.min(txf_show.getAnchor(), txf_show.getCaretPosition()));
             mouseCaret.set(mouseAnchor.get());
-        }
-        else if(keyEvent.getCode() == KeyCode.LEFT || keyEvent.getCode() == KeyCode.RIGHT || keyEvent.getCode() == KeyCode.UP || keyEvent.getCode() == KeyCode.DOWN || keyEvent.getCode() == KeyCode.HOME || keyEvent.getCode() == KeyCode.END) {
-            mouseAnchor.set(txf_show.getCaretPosition());
-            mouseCaret.set(txf_show.getCaretPosition());
-        }
-        else {
-            int tmpCaret = Math.min(mouseAnchor.get(), mouseCaret.get());
-            txf_show.setText(expression.toString());
-            mouseAnchor.set(tmpCaret);
-            mouseCaret.set(tmpCaret);
-            txf_show.positionCaret(mouseCaret.get());
         }
     }
 
@@ -370,8 +379,10 @@ public class NumberPadController {
 
             if (rtn == ButtonType.OK) {
                 dup.setValue(savedValue);
-                varList.add(new Variable(identity, savedValue));
-                varList.remove(varList.size() - 1);
+                ((Variable) tbv_vars.getItems()
+                        .get(tbv_vars.getSelectionModel().getFocusedIndex()))
+                        .setValue(savedValue);
+                tbv_vars.refresh();
             }
         }
         else
@@ -559,6 +570,7 @@ public class NumberPadController {
         return postfix;
     }
 
+    /*
     // check if the key is number key or not (include decimal point)
     private boolean isNumberKey(KeyCode key) {
         //   DIGIT KEY: 24-33
@@ -580,4 +592,5 @@ public class NumberPadController {
         KeyCode key = keyE.getCode();
         return key == KeyCode.PLUS || key == KeyCode.MINUS || key == KeyCode.MULTIPLY || key == KeyCode.DIVIDE;
     }
+    */
 }

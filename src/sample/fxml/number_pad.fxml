@@ -5,9 +5,8 @@
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.BorderPane?>
-
-<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
+
 <BorderPane fx:id="root_pane" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.NumberPadController">
     <center>
         <GridPane fx:id="gpn_number_pad" alignment="center" hgap="10" vgap="10">
@@ -29,20 +28,20 @@
             <Button fx:id="btn_multi" onAction="#numberPadButtonsClick" text="*" GridPane.columnIndex="2" GridPane.rowIndex="1" prefHeight="60" prefWidth="60" />
             <Button fx:id="btn_minus" onAction="#numberPadButtonsClick" text="-" GridPane.columnIndex="3" GridPane.rowIndex="1" prefHeight="60" prefWidth="60" />
             <Button fx:id="btn_plus" onAction="#numberPadButtonsClick" text="+" GridPane.columnIndex="4" GridPane.rowIndex="1" prefHeight="60" prefWidth="60" />
-            <Button fx:id="btn_parens" onAction="#numberPadButtonsClick" text="()" GridPane.columnIndex="0" GridPane.rowIndex="1" prefHeight="60" prefWidth="60" />
-            <Button fx:id="btn_backspace" onAction="#numberPadButtonsClick" text="＜" GridPane.columnIndex="3" GridPane.rowIndex="2" prefHeight="60" prefWidth="60" />
-            <Button fx:id="btn_clear" onAction="#numberPadButtonsClick" text="C" GridPane.columnIndex="4" GridPane.rowIndex="2" prefHeight="60" prefWidth="60" />
+            <Button fx:id="btn_parens" onAction="#numberPadButtonsClick" text="()" GridPane.columnIndex="0" GridPane.rowIndex="1" prefHeight="60" prefWidth="60" maxWidth="60" />
+            <Button fx:id="btn_backspace" onAction="#numberPadButtonsClick" text="Back" GridPane.columnIndex="3" GridPane.rowIndex="2" prefHeight="60" prefWidth="60" />
+            <Button fx:id="btn_clear" onAction="#numberPadButtonsClick" text="Clear" GridPane.columnIndex="4" GridPane.rowIndex="2" prefHeight="60" prefWidth="60" />
 
-            <Button fx:id="btn_save_as_var" onAction="#saveAsVarButtonClick" text="Save as variable" GridPane.columnIndex="3" GridPane.rowIndex="3" GridPane.columnSpan="2" prefHeight="60" prefWidth="130" />
+            <Button fx:id="btn_save_as_var" onAction="#saveAsVarButtonClick" text="Save as var" GridPane.columnIndex="3" GridPane.rowIndex="3" GridPane.columnSpan="2" prefHeight="60" prefWidth="130" />
 
         </GridPane>
     </center>
     <right>
         <VBox fx:id="vbx_vars">
-            <TableView fx:id="tbv_vars" prefWidth="200" prefHeight="400" />
-            <Button fx:id="btn_add_left" onAction="#btnAddVarClick" text="Add to the most left" prefWidth="200" prefHeight="53" />
-            <Button fx:id="btn_add_cursor" onAction="#btnAddVarClick" text="Add to the cursor" prefWidth="200" prefHeight="53" />
-            <Button fx:id="btn_add_right" onAction="#btnAddVarClick" text="Add to the most right" prefWidth="200" prefHeight="53" />
+            <TableView fx:id="tbv_vars" prefWidth="300" prefHeight="410" />
+            <Button fx:id="btn_add_left" onAction="#btnAddVarClick" text="Add to the most left" prefWidth="300" prefHeight="53" />
+            <Button fx:id="btn_add_cursor" onAction="#btnAddVarClick" text="Add to the cursor" prefWidth="300" prefHeight="53" />
+            <Button fx:id="btn_add_right" onAction="#btnAddVarClick" text="Add to the most right" prefWidth="300" prefHeight="53" />
         </VBox>
     </right>
 </BorderPane>

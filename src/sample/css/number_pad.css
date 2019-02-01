@@ -1,0 +1,13 @@
+#gpn_number_pad {
+    -fx-font-size: 20pt;
+}
+
+#btn_parens {
+    -fx-font-family: "Arial";
+    -fx-font-size: 17pt;
+}
+
+#btn_save_as_var, #btn_backspace, #btn_clear {
+    -fx-padding: 0pt;
+    -fx-font-size: 13pt;
+}

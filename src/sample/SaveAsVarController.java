@@ -5,7 +5,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 
 import java.util.Arrays;
@@ -44,8 +43,12 @@ public class SaveAsVarController {
     }
 
     private boolean isValidName() {
-        if(varName == null)
+        return isValidName(varName);
+    }
+
+    public static boolean isValidName(String name) {
+        if(name == null)
             return false;
-        return varName.matches("([a-zA-Z_]*[a-zA-Z][a-zA-Z_]*){1,100}");
+        return name.matches("([a-zA-Z_]*[a-zA-Z][a-zA-Z_]*){1,100}");
     }
 }
