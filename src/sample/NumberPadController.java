@@ -4,16 +4,15 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
+import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,15 +26,16 @@ public class NumberPadController {
     private static final String FORMAT_ERR_MSG = "Format error!";
     private static final String ARITHM_ERR_MSG = "Arithmetic error!";
     private boolean errorHappened = false;
+    private Variable selectedVar = null;
 
-    @FXML TextField txf_show;
-    @FXML Button btn_one, btn_two, btn_three, btn_four, btn_five, btn_six, btn_seven, btn_eight, btn_nine, btn_zero;
-    @FXML Button btn_dot, btn_plus, btn_div, btn_multi, btn_minus, btn_calc, btn_parens, btn_backspace, btn_clear;
-    @FXML Button btn_save_as_var;
     @FXML BorderPane root_pane;
-    @FXML GridPane gpn_number_pad;
+    @FXML private TextField txf_show;
+    @FXML private Button btn_one, btn_two, btn_three, btn_four, btn_five, btn_six, btn_seven, btn_eight, btn_nine, btn_zero;
+    @FXML private Button btn_dot, btn_plus, btn_div, btn_multi, btn_minus, btn_calc, btn_parens, btn_backspace, btn_clear, btn_save_as_var;
+    @FXML private VBox vbx_vars;
+    @FXML private Button btn_add_left, btn_add_cursor, btn_add_right;
 
-    @FXML TableView<Variable> tbv_vars;
+    @FXML private TableView<Variable> tbv_vars;
     @FXML private TableColumn<Variable, String> tbc_identity;
     @FXML private TableColumn<Variable, String> tbc_value;
 
@@ -43,21 +43,81 @@ public class NumberPadController {
     public void initialize() {
         tbv_vars.setEditable(false);
 
-        tbc_identity = new TableColumn("Identity");
-        tbc_identity.setMinWidth(100);
+        tbc_identity = new TableColumn("Name");
+        tbc_identity.setMinWidth(99);
         tbc_identity.setCellValueFactory(new PropertyValueFactory("identity"));
         tbc_identity.setCellFactory(TextFieldTableCell.forTableColumn());
 
         tbc_value = new TableColumn("Value");
-        tbc_value.setMinWidth(100);
+        tbc_value.setMinWidth(99);
         tbc_value.setCellValueFactory(new PropertyValueFactory("value"));
         tbc_value.setCellFactory(TextFieldTableCell.forTableColumn());
 
         tbv_vars.setItems(varList);
         tbv_vars.getColumns().addAll(tbc_identity, tbc_value);
+
+        tbv_vars.setRowFactory(tv -> {
+            TableRow<Variable> row = new TableRow<>();
+
+            row.setOnMouseClicked(event -> {
+                if (event.getButton().equals(MouseButton.PRIMARY) && (!row.isEmpty())) {
+                    Variable rowData = row.getItem();
+                    String varName = rowData.getIdentity();
+                    int index = row.getIndex();
+
+                    // left button double click
+                    if(event.getClickCount() == 2) {
+                        if(errorHappened) {
+                            expression.delete(0, expression.length());
+                            mouseCaret.set(0);
+                            mouseAnchor.set(0);
+
+                            errorHappened = false;
+                        }
+
+                        expression.replace(mouseAnchor.get(), mouseCaret.get(), varName);
+                        if(mouseAnchor.get() == mouseCaret.get()) {
+                            mouseCaret.addAndGet(varName.length());
+                            mouseAnchor.set(mouseCaret.get());
+                        }
+                        else {
+                            mouseCaret.set(mouseAnchor.get() + varName.length());
+                            mouseAnchor.addAndGet(varName.length());
+                        }
+
+                        txf_show.setText(expression.toString());
+                        txf_show.requestFocus();
+                        txf_show.positionCaret(mouseCaret.get());
+                    }
+                    // general click
+                    else {
+                        if(tbv_vars.getSelectionModel().isSelected(index)) {
+                            btn_add_left.setDisable(false);
+                            btn_add_cursor.setDisable(false);
+                            btn_add_right.setDisable(false);
+                            selectedVar = rowData;
+                        } else {
+                            btn_add_left.setDisable(true);
+                            btn_add_cursor.setDisable(true);
+                            btn_add_right.setDisable(true);
+                            selectedVar = null;
+                        }
+                    }
+                }
+            });
+            return row;
+        });
+
+        VBox.setMargin(tbv_vars, new Insets(10, 10, 10, 10));
+        VBox.setMargin(btn_add_left, new Insets(0, 10, 10, 10));
+        VBox.setMargin(btn_add_cursor, new Insets(0, 10, 10, 10));
+        VBox.setMargin(btn_add_right, new Insets(0, 10, 10, 10));
+        btn_add_left.setDisable(true);
+        btn_add_cursor.setDisable(true);
+        btn_add_right.setDisable(true);
     }
 
-    public void numberPadButtonsClick(ActionEvent actionEvent) {
+    public void numberPadButtonsClick(ActionEvent actionEvent) throws NumberFormatException, ArithmeticException, NoVariableException {
         Object clickedBtn = actionEvent.getSource();
         String insertValue = "";
 
@@ -108,6 +168,9 @@ public class NumberPadController {
             } catch (NumberFormatException e) {
                 errorHappened = true;
                 result = FORMAT_ERR_MSG;
+            } catch (NoVariableException e) {
+                errorHappened = true;
+                result = e.getMessage();
             }
 
             expression.delete(0, expression.length());
@@ -190,7 +253,7 @@ public class NumberPadController {
         txf_show.positionCaret(mouseCaret.get());
     }
 
-    public void saveAsVarButtonClick(ActionEvent actionEvent) {
+    public void saveAsVarButtonClick(ActionEvent actionEvent) throws NumberFormatException, ArithmeticException, NoVariableException {
         Object clickedBtn = actionEvent.getSource();
         if(clickedBtn == btn_save_as_var && Main.saveAsVarStage != null && !errorHappened && !txf_show.getText().equals("")) {
             String result;
@@ -200,22 +263,62 @@ public class NumberPadController {
                 result = ARITHM_ERR_MSG;
             } catch (NumberFormatException e) {
                 result = FORMAT_ERR_MSG;
+            } catch (NoVariableException e) {
+                result = e.getMessage();
             }
 
-            if(result.equals(ARITHM_ERR_MSG) || result.equals(FORMAT_ERR_MSG)) {
+            if(result.equals(ARITHM_ERR_MSG) || result.equals(FORMAT_ERR_MSG) || result.equals("No such variable")) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Error");
                 alert.setHeaderText("");
-                alert.setContentText("Format error or arithmetic error happened.");
+                alert.setContentText(result);
                 alert.showAndWait();
             }
             else {
                 savedValue = result;
-                gpn_number_pad.setDisable(true);
+                root_pane.setDisable(true);
                 Main.saveAsVarStage.setTitle("Save as variable: " + (expression.toString().equals(result) ? result : expression.toString() + " = " + result));
                 Main.saveAsVarStage.show();
             }
         }
+    }
+
+    public void btnAddVarClick(ActionEvent actionEvent) {
+        if(selectedVar == null)
+            return;
+        Object clickedBtn = actionEvent.getSource();
+
+        if(errorHappened) {
+            expression.delete(0, expression.length());
+            mouseCaret.set(0);
+            mouseAnchor.set(0);
+
+            errorHappened = false;
+        }
+
+        // add to the most left
+        if(clickedBtn == btn_add_left) {
+            expression.insert(0, selectedVar.getIdentity());
+        }
+        // add to the most right
+        else if(clickedBtn == btn_add_right) {
+            expression.insert(expression.length(), selectedVar.getIdentity());
+        }
+        // add to the cursor
+        else if(clickedBtn == btn_add_cursor) {
+            expression.replace(mouseAnchor.get(), mouseCaret.get(), selectedVar.getIdentity());
+
+            if(mouseAnchor.get() == mouseCaret.get()) {
+                mouseCaret.addAndGet(selectedVar.getIdentity().length());
+                mouseAnchor.set(mouseCaret.get());
+            }
+            else {
+                mouseCaret.set(mouseAnchor.get() + selectedVar.getIdentity().length());
+                mouseAnchor.addAndGet(selectedVar.getIdentity().length());
+            }
+        }
+
+        txf_show.setText(expression.toString());
     }
 
     public void txfClick(MouseEvent mouseEvent) {
@@ -226,7 +329,7 @@ public class NumberPadController {
     }
 
     public void txfKeyReleased(KeyEvent keyEvent) {
-        if(keyEvent.getCode() == KeyCode.BACK_SPACE || isNumberKey(keyEvent.getCode())) {
+        if(keyEvent.getCode() == KeyCode.BACK_SPACE || isNumberKey(keyEvent.getCode()) || isAlphabetKey(keyEvent.getCode()) || isOperatorKey(keyEvent)) {
             expression.delete(0, expression.length());
             expression.append(txf_show.getText());
             mouseAnchor.set(Math.min(txf_show.getAnchor(), txf_show.getCaretPosition()));
@@ -276,15 +379,11 @@ public class NumberPadController {
     }
 
     // calculate the value of the expression
-    private String calc(String exp) throws NumberFormatException, ArithmeticException {
+    private String calc(String exp) throws NumberFormatException, ArithmeticException, NoVariableException {
         ArrayList<Object> postfix;
         ArrayDeque<ExactNumber> numStk = new ArrayDeque<>();
 
-        try {
-            postfix = toPostfix(exp);
-        } catch (NumberFormatException e) {
-            throw e;
-        }
+        postfix = toPostfix(exp);
 
         for(Object ele: postfix) {
             // operators
@@ -342,7 +441,7 @@ public class NumberPadController {
     }
 
     // convert the expression to the postfix format
-    private ArrayList<Object> toPostfix(String exp) throws NumberFormatException {
+    private ArrayList<Object> toPostfix(String exp) throws NumberFormatException, NoVariableException {
         ArrayList<Object> postfix = new ArrayList<>();
         ArrayDeque<Character> opStk = new ArrayDeque<>();
         // calculating priority of operators
@@ -416,6 +515,30 @@ public class NumberPadController {
                 }
             }
 
+            // variable
+            else if(c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+                StringBuilder varNameBuf = new StringBuilder();
+                String varName = null;
+                boolean found = false;
+
+                while(k < exp.length() && (exp.charAt(k) == '_' || (exp.charAt(k) >= 'a' && exp.charAt(k) <= 'z') || (exp.charAt(k) >= 'A' && exp.charAt(k) <= 'Z'))) {
+                    varNameBuf.append(exp.charAt(k));
+                    ++k;
+                }
+                --k;
+
+                varName = varNameBuf.toString();
+                for(Variable v: varList) {
+                    if(v.getIdentity().equals(varName)) {
+                        found = true;
+                        postfix.add(new ExactNumber(v.getValue()));
+                        break;
+                    }
+                }
+                if(!found)
+                    throw new NoVariableException("No such variable");
+            }
+
             // invalid characters
             else
                 throw new NumberFormatException();
@@ -436,27 +559,25 @@ public class NumberPadController {
         return postfix;
     }
 
-    // check if the key is number key or not
+    // check if the key is number key or not (include decimal point)
     private boolean isNumberKey(KeyCode key) {
-        return (key == KeyCode.DIGIT1 ||
-                key == KeyCode.DIGIT2 ||
-                key == KeyCode.DIGIT3 ||
-                key == KeyCode.DIGIT4 ||
-                key == KeyCode.DIGIT5 ||
-                key == KeyCode.DIGIT6 ||
-                key == KeyCode.DIGIT7 ||
-                key == KeyCode.DIGIT8 ||
-                key == KeyCode.DIGIT9 ||
-                key == KeyCode.DIGIT0 ||
-                key == KeyCode.NUMPAD1 ||
-                key == KeyCode.NUMPAD2 ||
-                key == KeyCode.NUMPAD3 ||
-                key == KeyCode.NUMPAD4 ||
-                key == KeyCode.NUMPAD5 ||
-                key == KeyCode.NUMPAD6 ||
-                key == KeyCode.NUMPAD7 ||
-                key == KeyCode.NUMPAD8 ||
-                key == KeyCode.NUMPAD9 ||
-                key == KeyCode.NUMPAD0);
+        //   DIGIT KEY: 24-33
+        // NUM PAD KEY: 65-74
+        return (key.ordinal() >= 24 && key.ordinal() <= 33) || (key.ordinal() >= 65 && key.ordinal() <= 74) || key == KeyCode.DECIMAL;
+    }
+
+    // check if the key is alphabet key or not
+    private boolean isAlphabetKey(KeyCode key) {
+        // ALPHABET KEY: 36-61
+        return key.ordinal() >= 36 && key.ordinal() <= 61;
+    }
+
+    // check if the key is operator key (+, -, *, /) or not
+    private boolean isOperatorKey(KeyEvent keyE) {
+        KeyCombination keyComb = new KeyCharacterCombination("+", KeyCombination.SHIFT_DOWN);
+        if(keyComb.match(keyE))
+            return true;
+        KeyCode key = keyE.getCode();
+        return key == KeyCode.PLUS || key == KeyCode.MINUS || key == KeyCode.MULTIPLY || key == KeyCode.DIVIDE;
     }
 }

@@ -33,7 +33,7 @@ public class Main extends Application {
         saveAsVarStage.setOnHiding(new EventHandler<WindowEvent>() {
             @Override
             public void handle(WindowEvent we) {
-                numberPadController.gpn_number_pad.setDisable(false);
+                numberPadController.root_pane.setDisable(false);
                 if(SaveAsVarController.varName != null) {
                     numberPadController.addVariable(SaveAsVarController.varName);
                 }
