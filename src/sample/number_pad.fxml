@@ -1,22 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.RowConstraints?>
-
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.BorderPane?>
 
-<?import javafx.scene.layout.HBox?>
-
-<BorderPane fx:id="bpn_whole" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.NumberPadController">
-    <top>
-        <HBox fx:id="top_hbox">
-
-        </HBox>
-    </top>
+<BorderPane fx:id="root_pane" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sample.NumberPadController">
     <center>
         <GridPane fx:id="gpn_number_pad" alignment="center" hgap="10" vgap="10">
             <TextField fx:id="txf_show" onMouseClicked="#txfClick" onKeyPressed="#txfKeyPressed" text="" GridPane.columnSpan="5" prefHeight="60" prefWidth="270" alignment="CENTER_RIGHT" />
@@ -45,4 +35,9 @@
 
         </GridPane>
     </center>
+    <bottom>
+        <TableView fx:id="tbv_vars">
+
+        </TableView>
+    </bottom>
 </BorderPane>

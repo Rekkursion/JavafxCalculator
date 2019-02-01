@@ -1,12 +1,17 @@
 package sample;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 
 import java.util.ArrayDeque;
@@ -16,6 +21,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class NumberPadController {
+    private ObservableList<Variable> varList = FXCollections.observableArrayList();
+    private String savedValue = "";
     private StringBuffer expression = new StringBuffer();
     private AtomicInteger mouseAnchor = new AtomicInteger(0);
     private AtomicInteger mouseCaret = new AtomicInteger(0);
@@ -27,7 +34,19 @@ public class NumberPadController {
     @FXML Button btn_one, btn_two, btn_three, btn_four, btn_five, btn_six, btn_seven, btn_eight, btn_nine, btn_zero;
     @FXML Button btn_dot, btn_plus, btn_div, btn_multi, btn_minus, btn_calc, btn_parens, btn_backspace, btn_clear;
     @FXML Button btn_save_as_var;
+    @FXML BorderPane root_pane;
     @FXML GridPane gpn_number_pad;
+
+    @FXML private TableView<Variable> tbv_vars;
+    @FXML private TableColumn<Variable, String> tbc_identity;
+    @FXML private TableColumn<Variable, String> tbc_value;
+
+    @FXML
+    public void initialize() {
+        //tbc_identity.setCellValueFactory(cellValue -> cellValue.getValue().getIdentityProperty());
+        //tbc_value.setCellValueFactory(cellValue -> cellValue.getValue().getValueProperty());
+        //tbv_vars.setItems(varList);
+    }
 
     public void numberPadButtonsClick(ActionEvent actionEvent) {
         Object clickedBtn = actionEvent.getSource();
@@ -165,6 +184,7 @@ public class NumberPadController {
     public void saveAsVarButtonClick(ActionEvent actionEvent) {
         Object clickedBtn = actionEvent.getSource();
         if(clickedBtn == btn_save_as_var && Main.saveAsVarStage != null) {
+            savedValue = txf_show.getText();
             gpn_number_pad.setDisable(true);
             Main.saveAsVarStage.show();
         }
@@ -183,6 +203,15 @@ public class NumberPadController {
             expression.append(txf_show.getText());
             mouseAnchor.set(Math.min(txf_show.getAnchor(), txf_show.getCaretPosition()));
             mouseCaret.set(mouseAnchor.get());
+        }
+    }
+
+    // add new variable to varList
+    public void addVariable(String identity) {
+        varList.add(new Variable(identity, savedValue));
+
+        for(Variable va: varList) {
+            System.out.println(va);
         }
     }
 

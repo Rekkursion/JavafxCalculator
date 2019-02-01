@@ -5,8 +5,6 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.WindowEvent;
@@ -16,10 +14,17 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
+        FXMLLoader numberPadLoader = new FXMLLoader();
+        Parent root = numberPadLoader.load(getClass().getResource("number_pad.fxml").openStream());
+        NumberPadController numberPadController = numberPadLoader.getController();
+
+        numberPadController.root_pane.getBottom().prefHeight(5.0);
+
         primaryStage.setTitle("Javafx Calculator");
         primaryStage.setScene(new Scene(root, 600, 550));
         primaryStage.show();
+
+        // ========================================================================================
 
         Parent saveAsVarRoot = FXMLLoader.load(getClass().getResource("save_as_var.fxml"));
         saveAsVarStage = new Stage();
@@ -30,11 +35,9 @@ public class Main extends Application {
         saveAsVarStage.setOnHiding(new EventHandler<WindowEvent>() {
             @Override
             public void handle(WindowEvent we) {
-                System.out.println("var name stage closing");
-                ((GridPane)root.lookup("#gpn_number_pad")).setDisable(false);
-                //((TextField)root.lookup("#txf_show")).setText(SaveAsVarController.varName);
+                numberPadController.gpn_number_pad.setDisable(false);
                 if(SaveAsVarController.varName != null) {
-                    // TODO
+                    numberPadController.addVariable(SaveAsVarController.varName);
                 }
             }
         });

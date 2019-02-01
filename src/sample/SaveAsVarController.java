@@ -20,8 +20,6 @@ public class SaveAsVarController {
 
     @FXML
     public void initialize() {
-        System.out.println("save as var controller initialized");
-
         // set the text of rules
         String[] varNameRules = {"- Numbers(0-9), alphabets(a-zA-Z), and underline(_) only.",
                 "- The first character might not be a number.",
