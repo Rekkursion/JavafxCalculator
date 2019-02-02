@@ -18,6 +18,7 @@ import javafx.scene.layout.VBox;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class NumberPadController {
     private ObservableList<Variable> varList = FXCollections.observableArrayList();
@@ -102,7 +103,9 @@ public class NumberPadController {
             @Override
             public void handle(TableColumn.CellEditEvent<Variable, String> event) {
                 String newValue = event.getNewValue();
-                if(!newValue.matches("[+\\-]?[0-9]*.?[0-9]+") && !newValue.matches("[+\\-]?[0-9]+.?[0-9]*")) {
+                boolean isValid = ExactNumber.checkIsValidNumber(newValue);
+
+                if(!isValid) {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle("Invalid value error");
                     alert.setHeaderText("");
@@ -466,7 +469,6 @@ public class NumberPadController {
         ArrayDeque<ExactNumber> numStk = new ArrayDeque<>();
 
         postfix = toPostfix(exp);
-
         for(Object ele: postfix) {
             // operators
             if(ele instanceof String) {
@@ -545,6 +547,7 @@ public class NumberPadController {
         for(int k = 0; k < exp.length(); ++k) {
             char c = exp.charAt(k);
 
+            // TODO: scientific notation support
             // a number
             if((c >= '0' && c <= '9') || c == '.') {
                 // build the number
@@ -601,8 +604,7 @@ public class NumberPadController {
             // variable
             else if(c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
                 StringBuilder varNameBuf = new StringBuilder();
-                String varName = null;
-                boolean found = false;
+                final String varName;
 
                 while(k < exp.length() && (exp.charAt(k) == '_' || (exp.charAt(k) >= 'a' && exp.charAt(k) <= 'z') || (exp.charAt(k) >= 'A' && exp.charAt(k) <= 'Z'))) {
                     varNameBuf.append(exp.charAt(k));
@@ -611,15 +613,12 @@ public class NumberPadController {
                 --k;
 
                 varName = varNameBuf.toString();
-                for(Variable v: varList) {
-                    if(v.getIdentity().equals(varName)) {
-                        found = true;
-                        postfix.add(new ExactNumber(v.getValue()));
-                        break;
-                    }
-                }
-                if(!found)
+                try {
+                    ExactNumber newNum = new ExactNumber(tbv_vars.getItems().stream().filter(obj -> obj.getIdentity().equals(varName)).collect(Collectors.toList()).get(0).getValue().trim());
+                    postfix.add(newNum);
+                } catch(Exception e) {
                     throw new NoVariableException("No such variable");
+                }
             }
 
             // invalid characters
