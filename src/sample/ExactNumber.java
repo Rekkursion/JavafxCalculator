@@ -2,6 +2,7 @@ package sample;
 
 import javafx.geometry.Pos;
 
+import java.util.FormatterClosedException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,9 +49,16 @@ public class ExactNumber {
 
     // constructor: a string as a fraction number
     public ExactNumber(String num) {
-        isNeg = (num.length() > 0 && num.charAt(0) == '-');
-        if(isNeg)
+        if(num.length() > 0 && num.charAt(0) == '-') {
+            isNeg = true;
             num = num.substring(1);
+        }
+        else if(num.length() > 0 && num.charAt(0) == '+') {
+            isNeg = false;
+            num = num.substring(1);
+        }
+        else
+            isNeg = false;
 
         int dotIdx = num.indexOf(".");
 
@@ -99,6 +107,173 @@ public class ExactNumber {
         decimalPrecision = newDecimalPrecision;
     }
 
+    // static method: check if the string is a valid number
+    public static boolean checkIsValidNumber(String s) {
+        final int INTEGER_MODE = 0;
+        final int FRACTION_MODE = 1;
+        final int EXPONENTIAL_MODE = 2;
+
+        if(s == null)
+            return false;
+
+        // trim the white space at head and tail
+        s = s.trim();
+        if(s.length() == 0)
+            return false;
+
+        int startIdx = 0;
+        int mode = INTEGER_MODE;
+        boolean hasValidExp = true, hasValidBase = false;
+
+        // deal with the first character
+        if(s.charAt(0) >= '0' && s.charAt(0) <= '9')
+            hasValidBase = true;
+        else if(s.charAt(0) == '+' || s.charAt(0) == '-')
+            startIdx = 1;
+        else if(s.charAt(0) == '.') {
+            startIdx = 1;
+            mode = FRACTION_MODE;
+        }
+        else
+            return false;
+
+        for(int k = startIdx; k < s.length(); ++k) {
+            if(s.charAt(k) >= '0' && s.charAt(k) <= '9') {
+                if(mode == EXPONENTIAL_MODE)
+                    hasValidExp = true;
+                else
+                    hasValidBase = true;
+            }
+            else if(s.charAt(k) == '.') {
+                if(mode == INTEGER_MODE)
+                    mode = FRACTION_MODE;
+                else
+                    return false;
+            }
+            else if(s.charAt(k) == 'e') {
+                if(mode == EXPONENTIAL_MODE)
+                    return false;
+                else
+                    mode = EXPONENTIAL_MODE;
+
+                if(k + 1 < s.length() && (s.charAt(k + 1) == '+' || s.charAt(k + 1) == '-'))
+                    ++k;
+                hasValidExp = false;
+            }
+            else
+                return false;
+        }
+
+        return (hasValidExp && hasValidBase);
+    }
+
+    // TODO: still no test the convert
+    // static method: convert a scientific notation style number into a fraction style number
+    public static String convertScientificNotationStyle2FractionStyle(String s) throws NumberFormatException {
+        if(!checkIsValidNumber(s))
+            throw new NumberFormatException();
+
+        boolean isNegative = false;
+        StringBuilder intPartBuf = new StringBuilder();
+        StringBuilder frcPartBuf = new StringBuilder();
+        int exponential = 0;
+
+        if(s.charAt(0) == '+') {
+            s = s.substring(1);
+        }
+        else if(s.charAt(0) == '-') {
+            isNegative = true;
+            s = s.substring(1);
+        }
+
+        int curIdx;
+        // search for int part
+        for(curIdx = 0; curIdx < s.length() && s.charAt(curIdx) >= '0' && s.charAt(curIdx) <= '9'; ++curIdx)
+            intPartBuf.append(s.charAt(curIdx));
+        if(intPartBuf.length() == 0)
+            intPartBuf.append(0);
+
+        // reach the end
+        if(curIdx >= s.length())
+            frcPartBuf.append(0);
+        // still not reach the end
+        else {
+            boolean hasExponential = false;
+
+            // current character is decimal point
+            if(s.charAt(curIdx) == '.') {
+                for(; curIdx < s.length() && s.charAt(curIdx) >= '0' && s.charAt(curIdx) <= '9'; ++curIdx)
+                    frcPartBuf.append(s.charAt(curIdx));
+                // meet the character 'e'
+                if(curIdx < s.length())
+                    hasExponential = true;
+            }
+            // current character is 'e' ( else if(s.charAt(curIdx) == 'e') )
+            else
+                hasExponential = true;
+
+            // deal with 'e'
+            if(hasExponential) {
+                boolean isExponentialPositive = true;
+
+                ++curIdx;
+                if(s.charAt(curIdx) == '+')
+                    ++curIdx;
+                else if(s.charAt(curIdx) == '-') {
+                    ++curIdx;
+                    isExponentialPositive = false;
+                }
+
+                for(; curIdx < s.length(); ++curIdx)
+                    exponential = (exponential * 10) + (s.charAt(curIdx) - '0');
+                if(!isExponentialPositive)
+                    exponential = -exponential;
+            }
+
+            if(frcPartBuf.length() == 0)
+                frcPartBuf.append(0);
+        } // end of still not reach the end
+
+        // move decimal point to right
+        if(exponential > 0) {
+            while(exponential > 0) {
+                if(frcPartBuf.length() > 0) {
+                    intPartBuf.append(frcPartBuf.charAt(0));
+                    frcPartBuf.deleteCharAt(0);
+                }
+                else
+                    intPartBuf.append(0);
+                --exponential;
+            }
+            if(frcPartBuf.length() == 0)
+                frcPartBuf.append(0);
+        }
+        // move decimal point to left
+        else {
+            while(exponential < 0) {
+                if(intPartBuf.length() > 0) {
+                    frcPartBuf.insert(0, intPartBuf.charAt(intPartBuf.length() - 1));
+                    intPartBuf.deleteCharAt(intPartBuf.length() - 1);
+                }
+                else
+                    frcPartBuf.insert(0, "0");
+
+                ++exponential;
+            }
+            if(intPartBuf.length() == 0)
+                intPartBuf.append(0);
+        }
+
+        String intPart = PositiveIntegerOperation.removePreZero(intPartBuf.toString());
+        String frcPart = PositiveIntegerOperation.removePostZero(frcPartBuf.toString());
+
+        if(PositiveIntegerOperation.isZero(intPart) && PositiveIntegerOperation.isZero(frcPart))
+            return "0";
+
+        if(PositiveIntegerOperation.isZero(frcPart))
+            return (isNegative ? "-" : "") + intPart;
+        return (isNegative ? "-" : "") + intPart + "." + frcPart;
+    }
     // ===================================================================================
 
     // add
@@ -283,6 +458,7 @@ public class ExactNumber {
         // intPart is not 0
         else {
             // TODO: variable name strict cannot use e or E, convert scientific notation style to fraction style
+            // TODO: hint: e只可能夾在數字之中，或是右邊是負號
             while(intPartBuf.length() > 1) {
                 ++exponential;
                 frcPartBuf.insert(0, intPartBuf.charAt(intPartBuf.length() - 1));
