@@ -155,7 +155,11 @@ public class PositiveIntegerOperation {
             }
             // many digits (>= 2) in fraction part
             else {
+                int origLen = frcDivResult.length() - 1;
                 frcDivResult = add(frcDivResult.substring(0, frcDivResult.length() - 1), "1");
+                if(frcDivResult.length() < origLen)
+                    frcDivResult = Stream.iterate("0", ch -> "0").limit(origLen - frcDivResult.length()).collect(Collectors.joining("")) + frcDivResult;
+
                 // carry to integer part
                 if(frcDivResult.matches("^10+")) {
                     intDivResult = add(intDivResult, "1");

@@ -12,7 +12,7 @@
     -fx-font-size: 13pt;
 }
 
-#lbl_precision_name, #lbl_precision_value, #sld_precision, #chk_show_redundant_zero {
+#lbl_precision_name, #lbl_precision_value, #sld_precision, #chk_show_redundant_zero, #chk_use_scientific_notation {
     -fx-padding: 10 10 0 10;
     -fx-font-size: 13pt;
 }

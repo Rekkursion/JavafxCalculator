@@ -1,5 +1,7 @@
 package sample;
 
+import javafx.geometry.Pos;
+
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -8,7 +10,8 @@ public class ExactNumber {
     private static boolean showRedundantDecimal = false;
     public String numerator;
     public String denominator;
-    public String fractionStyle;
+    public String fractionStyle = "";
+    public String scientificNotationStyle;
     public boolean isNeg;
 
     // default constructor
@@ -20,6 +23,7 @@ public class ExactNumber {
         denominator = old.denominator;
         isNeg = old.isNeg;
         fractionStyle = old.fractionStyle;
+        scientificNotationStyle = old.scientificNotationStyle;
     }
 
     // constructor: 2 strings as numerator and denominator respectively
@@ -31,6 +35,7 @@ public class ExactNumber {
         denominator = PositiveIntegerOperation.removePreZero(denoIsNeg ? deno.substring(1) : deno);
         isNeg = (numeIsNeg ^ denoIsNeg) && !PositiveIntegerOperation.isZero(numerator);
         toFractionStyle_update(numerator, denominator);
+        toScientificNotationStyle_update(numerator, denominator);
     }
 
     // constructor: 2 strings as numerator and denominator respectively, and 1 boolean as if it's negative
@@ -38,6 +43,7 @@ public class ExactNumber {
         this(nume, deno);
         isNeg = isNegative;
         toFractionStyle_update(numerator, denominator);
+        toScientificNotationStyle_update(numerator, denominator);
     }
 
     // constructor: a string as a fraction number
@@ -78,8 +84,7 @@ public class ExactNumber {
                 isNeg = false;
         }
         toFractionStyle_update(numerator, denominator);
-
-        //System.err.println((isNeg ? "-" : "") + numerator + "/" + denominator);
+        toScientificNotationStyle_update(numerator, denominator);
     }
 
     // ===================================================================================
@@ -227,6 +232,78 @@ public class ExactNumber {
     private void toFractionStyle_update(String a, String b) throws ArithmeticException {
         toFractionStyleWithoutSigned_update(a, b);
         fractionStyle = (isNeg ? "-" : "") + fractionStyle;
+    }
+
+    // convert numerator and denominator to scientific notation style
+    private void toScientificNotationStyle_update(String a, String b) throws ArithmeticException {
+        // ensure that fraction style is built
+        if(fractionStyle == null || fractionStyle.equals(""))
+            toFractionStyle_update(a, b);
+
+        boolean isNegative = false;
+        int dotIdx;
+        String fraction = fractionStyle;
+        StringBuilder intPartBuf = new StringBuilder();
+        StringBuilder frcPartBuf = new StringBuilder();
+        int exponential = 0;
+
+        if(fraction.charAt(0) == '-') {
+            isNegative = true;
+            fraction = fraction.substring(1);
+        }
+
+        dotIdx = fraction.indexOf(".");
+        // no decimal point, it is an integer
+        if(dotIdx == -1) {
+            intPartBuf.append(fraction);
+            frcPartBuf.append(0);
+        }
+        // has decimal point
+        else {
+            intPartBuf.append(fraction.substring(0, dotIdx));
+            frcPartBuf.append(fraction.substring(dotIdx + 1));
+        }
+
+        // intPart is 0, frcPart is 0 as well
+        if(PositiveIntegerOperation.isZero(intPartBuf.toString()) && PositiveIntegerOperation.isZero(frcPartBuf.toString())) {
+            isNegative = false;
+            scientificNotationStyle = "0.0";
+        }
+        // intPart is 0
+        else if(PositiveIntegerOperation.isZero(intPartBuf.toString())) {
+            do {
+                --exponential;
+                intPartBuf.append(frcPartBuf.toString().charAt(0));
+                frcPartBuf.deleteCharAt(0);
+            } while(frcPartBuf.length() > 0 && intPartBuf.charAt(intPartBuf.length() - 1) == '0');
+            if(frcPartBuf.length() == 0)
+                frcPartBuf.append(0);
+        }
+        // intPart is not 0
+        else {
+            // TODO: variable name strict cannot use e or E, convert scientific notation style to fraction style
+            while(intPartBuf.length() > 1) {
+                ++exponential;
+                frcPartBuf.insert(0, intPartBuf.charAt(intPartBuf.length() - 1));
+                intPartBuf.deleteCharAt(intPartBuf.length() - 1);
+            }
+        }
+
+        String intPart = PositiveIntegerOperation.removePreZero(intPartBuf.toString());
+        String frcPart = PositiveIntegerOperation.removePostZero(frcPartBuf.toString());
+
+        if(PositiveIntegerOperation.isZero(frcPart)) {
+            if(exponential == 0)
+                scientificNotationStyle = (isNegative ? "-" : "") + intPart;
+            else
+                scientificNotationStyle = (isNegative ? "-" : "") + intPart + "e" + String.valueOf(exponential);
+        }
+        else {
+            if(exponential == 0)
+                scientificNotationStyle = (isNegative ? "-" : "") + intPart + "." + frcPart;
+            else
+                scientificNotationStyle = (isNegative ? "-" : "") + intPart + "." + frcPart + "e" + String.valueOf(exponential);
+        }
     }
 
     @Override

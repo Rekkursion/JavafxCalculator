@@ -41,8 +41,8 @@ public class NumberPadController {
     @FXML private Button btn_dot, btn_plus, btn_div, btn_multi, btn_minus, btn_calc, btn_parens, btn_backspace, btn_clear, btn_save_as_var, btn_undo;
     @FXML private VBox vbx_vars;
     @FXML private Slider sld_precision;
-    @FXML private Label lbl_precision_value;
-    @FXML private CheckBox chk_show_redundant_zero;
+    @FXML private Label lbl_precision_value, lbl_precision_name;
+    @FXML private CheckBox chk_show_redundant_zero, chk_use_scientific_notation;
 
     @FXML TableView<Variable> tbv_vars;
     @FXML private TableColumn<Variable, String> tbc_identity;
@@ -51,6 +51,14 @@ public class NumberPadController {
 
     @FXML
     public void initialize() {
+        chk_use_scientific_notation.setSelected(false);
+        chk_use_scientific_notation.selectedProperty().addListener(((observable, oldValue, newValue) -> {
+            // disable or enable decimal precision control functions
+            if(newValue)
+                chk_show_redundant_zero.setSelected(false);
+            chk_show_redundant_zero.setDisable(newValue);
+        }));
+
         chk_show_redundant_zero.setSelected(false);
         chk_show_redundant_zero.selectedProperty().addListener(((observable, oldValue, newValue) -> {
             ExactNumber.setShowRedundantDecimal(newValue);
@@ -510,8 +518,9 @@ public class NumberPadController {
             throw new NumberFormatException();
 
         ExactNumber ret = numStk.pop();
-        System.err.println(ret.fractionStyle);
-        return ret.fractionStyle;
+        //System.err.println(ret.fractionStyle);
+
+        return chk_use_scientific_notation.isSelected() ? ret.scientificNotationStyle : ret.fractionStyle;
     }
 
     // convert the expression to the postfix format
