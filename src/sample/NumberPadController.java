@@ -29,13 +29,16 @@ public class NumberPadController {
     private static final String ARITHM_ERR_MSG = "Arithmetic error!";
     private boolean errorHappened = false;
     private Variable selectedVar = null;
+    private ArrayDeque<String> history = null;
+    private static final int MAX_HISTORY_SIZE = 200002;
+    private boolean undoing = false;
 
     @FXML BorderPane root_pane;
     @FXML Button btn_add_left, btn_add_cursor, btn_add_right;
     @FXML GridPane gpn_number_pad;
     @FXML private TextField txf_show;
     @FXML private Button btn_one, btn_two, btn_three, btn_four, btn_five, btn_six, btn_seven, btn_eight, btn_nine, btn_zero;
-    @FXML private Button btn_dot, btn_plus, btn_div, btn_multi, btn_minus, btn_calc, btn_parens, btn_backspace, btn_clear, btn_save_as_var;
+    @FXML private Button btn_dot, btn_plus, btn_div, btn_multi, btn_minus, btn_calc, btn_parens, btn_backspace, btn_clear, btn_save_as_var, btn_undo;
     @FXML private VBox vbx_vars;
 
     @FXML TableView<Variable> tbv_vars;
@@ -45,12 +48,21 @@ public class NumberPadController {
 
     @FXML
     public void initialize() {
+        history = new ArrayDeque<>();
+        txf_show.textProperty().addListener((observable, oldValue, newValue) -> {
+            if(!undoing) {
+                if(history.size() == MAX_HISTORY_SIZE)
+                    history.pollFirst();
+                history.offerLast(oldValue);
+            }
+        });
+
         tbv_vars.setEditable(true);
 
         // identity col
         tbc_identity = new TableColumn("Name");
         tbc_identity.setMinWidth(10);
-        tbc_identity.setPrefWidth(99);
+        tbc_identity.setPrefWidth(98);
         tbc_identity.setCellValueFactory(new PropertyValueFactory("identity"));
         tbc_identity.setCellFactory(TextFieldTableCell.forTableColumn());
         tbc_identity.setEditable(false);
@@ -59,7 +71,7 @@ public class NumberPadController {
         // value col
         tbc_value = new TableColumn("Value");
         tbc_value.setMinWidth(10);
-        tbc_value.setPrefWidth(99);
+        tbc_value.setPrefWidth(98);
         tbc_value.setCellValueFactory(new PropertyValueFactory("value"));
         tbc_value.setCellFactory(TextFieldTableCell.forTableColumn());
         tbc_value.setOnEditCommit(new EventHandler<TableColumn.CellEditEvent<Variable, String>>() {
@@ -86,7 +98,7 @@ public class NumberPadController {
         // action col
         tbc_action = new TableColumn("Action");
         tbc_action.setMinWidth(10);
-        tbc_action.setPrefWidth(99);
+        tbc_action.setPrefWidth(98);
         tbc_action.setCellValueFactory(new PropertyValueFactory<Variable, String>("btnDelete"));
         tbc_action.setSortable(false);
 
@@ -131,6 +143,7 @@ public class NumberPadController {
         root_pane.getStylesheets().add(getClass().getResource("css/number_pad.css").toExternalForm());
     }
 
+    // number pad control
     public void numberPadButtonsClick(ActionEvent actionEvent) throws NumberFormatException, ArithmeticException, NoVariableException {
         Object clickedBtn = actionEvent.getSource();
         String insertValue = "";
@@ -172,25 +185,7 @@ public class NumberPadController {
         else if(clickedBtn == btn_clear)
             insertValue = "C";
         else if(clickedBtn == btn_calc) {
-            String result;
-            errorHappened = false;
-            try {
-                result = calc(expression.toString());
-            } catch (ArithmeticException e) {
-                errorHappened = true;
-                result = ARITHM_ERR_MSG;
-            } catch (NumberFormatException e) {
-                errorHappened = true;
-                result = FORMAT_ERR_MSG;
-            } catch (NoVariableException e) {
-                errorHappened = true;
-                result = e.getMessage();
-            }
-
-            expression.delete(0, expression.length());
-            expression.append(result);
-            mouseAnchor.set(result.length());
-            mouseCaret.set(mouseAnchor.get());
+            startCalc();
         }
 
         // parentheses
@@ -267,6 +262,7 @@ public class NumberPadController {
         txf_show.positionCaret(mouseCaret.get());
     }
 
+    // save the value as variable to the list, and show in the table view
     public void saveAsVarButtonClick(ActionEvent actionEvent) throws NumberFormatException, ArithmeticException, NoVariableException {
         Object clickedBtn = actionEvent.getSource();
         if(clickedBtn == btn_save_as_var && Main.saveAsVarStage != null && !errorHappened && !txf_show.getText().equals("")) {
@@ -297,6 +293,7 @@ public class NumberPadController {
         }
     }
 
+    // add the selected variable into the expression
     public void btnAddVarClick(ActionEvent actionEvent) {
         if(selectedVar == null)
             return;
@@ -335,6 +332,25 @@ public class NumberPadController {
         txf_show.setText(expression.toString());
     }
 
+    // undo the input, takes from the history array deque
+    public void btnUndoClick(ActionEvent actionEvent) {
+        Object clickedBtn = actionEvent.getSource();
+        if(clickedBtn == btn_undo) {
+            if(!history.isEmpty()) {
+                expression.delete(0, expression.length());
+                expression.append(history.pollLast());
+                undoing = true;
+                txf_show.setText(expression.toString());
+                undoing = false;
+                txf_show.requestFocus();
+                txf_show.positionCaret(expression.length());
+                mouseCaret.set(txf_show.getCaretPosition());
+                mouseAnchor.set(txf_show.getCaretPosition());
+            }
+        }
+    }
+
+    // click the expression text field
     public void txfClick(MouseEvent mouseEvent) {
         if(mouseEvent.getEventType() == MouseEvent.MOUSE_CLICKED) {
             mouseAnchor.set(Math.min(txf_show.getAnchor(), txf_show.getCaretPosition()));
@@ -342,11 +358,19 @@ public class NumberPadController {
         }
     }
 
+    // key released when expression text field is focused
     public void txfKeyReleased(KeyEvent keyEvent) {
         // arrow keys
         if(keyEvent.getCode() == KeyCode.LEFT || keyEvent.getCode() == KeyCode.RIGHT || keyEvent.getCode() == KeyCode.UP || keyEvent.getCode() == KeyCode.DOWN || keyEvent.getCode() == KeyCode.HOME || keyEvent.getCode() == KeyCode.END) {
             mouseAnchor.set(txf_show.getCaretPosition());
             mouseCaret.set(txf_show.getCaretPosition());
+        }
+        // enter
+        else if(keyEvent.getCode() == KeyCode.ENTER) {
+            startCalc();
+            txf_show.setText(expression.toString());
+            txf_show.requestFocus();
+            txf_show.positionCaret(mouseCaret.get());
         }
         // others
         else {
@@ -355,6 +379,29 @@ public class NumberPadController {
             mouseAnchor.set(Math.min(txf_show.getAnchor(), txf_show.getCaretPosition()));
             mouseCaret.set(mouseAnchor.get());
         }
+    }
+
+    // start the calculation
+    public void startCalc() {
+        String result;
+        errorHappened = false;
+        try {
+            result = calc(expression.toString());
+        } catch (ArithmeticException e) {
+            errorHappened = true;
+            result = ARITHM_ERR_MSG;
+        } catch (NumberFormatException e) {
+            errorHappened = true;
+            result = FORMAT_ERR_MSG;
+        } catch (NoVariableException e) {
+            errorHappened = true;
+            result = e.getMessage();
+        }
+
+        expression.delete(0, expression.length());
+        expression.append(result);
+        mouseAnchor.set(result.length());
+        mouseCaret.set(mouseAnchor.get());
     }
 
     // add new variable to varList

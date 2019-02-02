@@ -5,6 +5,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 
 import java.util.Arrays;
@@ -20,9 +21,9 @@ public class SaveAsVarController {
     @FXML
     public void initialize() {
         // set the text of rules
-        String[] varNameRules = {"- Alphabets(a-zA-Z) and underline(_) only.",
-                "- There must be at least one alphabet.",
-                "- Minimum and maximum length is 1 and 100 respectively."};
+        String[] varNameRules = {"-Alphabets(a-zA-Z) and underline(_) only.",
+                "-There must be at least one alphabet.",
+                "-The range of length must be in 1 to 100."};
         lbl_var_name_rule.setText(Arrays.stream(varNameRules).collect(Collectors.joining("\n")));
         btn_confirm_name.setDisable(true);
     }
@@ -37,9 +38,14 @@ public class SaveAsVarController {
     }
 
     public void txfVarNameKeyReleased(KeyEvent keyEvent) {
-        varName = txf_var_name.getText();
-        //System.out.println("|" + varName + "|");
-        btn_confirm_name.setDisable(!isValidName());
+        if(keyEvent.getCode() == KeyCode.ENTER) {
+            if(!btn_confirm_name.isDisabled())
+                btnConfirmClick(null);
+        }
+        else {
+            varName = txf_var_name.getText();
+            btn_confirm_name.setDisable(!isValidName());
+        }
     }
 
     private boolean isValidName() {

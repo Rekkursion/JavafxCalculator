@@ -30,8 +30,10 @@ public class Main extends Application {
 
         FXMLLoader saveAsVarLoader = new FXMLLoader();
         Parent saveAsVarRoot = saveAsVarLoader.load(getClass().getResource("fxml/save_as_var.fxml").openStream());
+        saveAsVarRoot.setId("save_as_var_root");
 
         saveAsVarRoot.getStylesheets().add(getClass().getResource("css/globally.css").toExternalForm());
+        saveAsVarRoot.getStylesheets().add(getClass().getResource("css/save_as_var_stage.css").toExternalForm());
         SaveAsVarController saveAsVarController = saveAsVarLoader.getController();
 
         saveAsVarStage = new Stage();
