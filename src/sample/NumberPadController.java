@@ -40,6 +40,9 @@ public class NumberPadController {
     @FXML private Button btn_one, btn_two, btn_three, btn_four, btn_five, btn_six, btn_seven, btn_eight, btn_nine, btn_zero;
     @FXML private Button btn_dot, btn_plus, btn_div, btn_multi, btn_minus, btn_calc, btn_parens, btn_backspace, btn_clear, btn_save_as_var, btn_undo;
     @FXML private VBox vbx_vars;
+    @FXML private Slider sld_precision;
+    @FXML private Label lbl_precision_value;
+    @FXML private CheckBox chk_show_redundant_zero;
 
     @FXML TableView<Variable> tbv_vars;
     @FXML private TableColumn<Variable, String> tbc_identity;
@@ -48,6 +51,18 @@ public class NumberPadController {
 
     @FXML
     public void initialize() {
+        chk_show_redundant_zero.setSelected(false);
+        chk_show_redundant_zero.selectedProperty().addListener(((observable, oldValue, newValue) -> {
+            ExactNumber.setShowRedundantDecimal(newValue);
+        }));
+
+        lbl_precision_value.setText(String.format("%4d", (int)sld_precision.getValue()));
+        sld_precision.setBlockIncrement(1);
+        sld_precision.valueProperty().addListener(((observable, oldValue, newValue) -> {
+            lbl_precision_value.setText(String.format("%4d", (int)newValue.doubleValue()));
+            ExactNumber.setDecimalPrecision((int)newValue.doubleValue());
+        }));
+
         history = new ArrayDeque<>();
         txf_show.textProperty().addListener((observable, oldValue, newValue) -> {
             if(!undoing) {

@@ -4,6 +4,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ExactNumber {
+    private static int decimalPrecision = 10;
+    private static boolean showRedundantDecimal = false;
     public String numerator;
     public String denominator;
     public String fractionStyle;
@@ -78,6 +80,18 @@ public class ExactNumber {
         toFractionStyle_update(numerator, denominator);
 
         //System.err.println((isNeg ? "-" : "") + numerator + "/" + denominator);
+    }
+
+    // ===================================================================================
+
+    // static method: set show redundant decimal
+    public static void setShowRedundantDecimal(boolean _showRedundantDecimal) {
+        showRedundantDecimal = _showRedundantDecimal;
+    }
+
+    // static method: set new decimal precision
+    public static void setDecimalPrecision(int newDecimalPrecision) {
+        decimalPrecision = newDecimalPrecision;
     }
 
     // ===================================================================================
@@ -206,7 +220,7 @@ public class ExactNumber {
 
     // convert numerator and denominator to fraction style without signed
     private void toFractionStyleWithoutSigned_update(String a, String b) throws ArithmeticException {
-        fractionStyle = PositiveIntegerOperation.divide(a, b, 10);
+        fractionStyle = PositiveIntegerOperation.divide(a, b, decimalPrecision, showRedundantDecimal);
     }
 
     // convert numerator and denominator to fraction style

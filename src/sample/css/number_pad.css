@@ -11,3 +11,8 @@
     -fx-padding: 0pt;
     -fx-font-size: 13pt;
 }
+
+#lbl_precision_name, #lbl_precision_value, #sld_precision, #chk_show_redundant_zero {
+    -fx-padding: 10 10 0 10;
+    -fx-font-size: 13pt;
+}

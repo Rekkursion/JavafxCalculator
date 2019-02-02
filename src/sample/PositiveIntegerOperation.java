@@ -124,7 +124,7 @@ public class PositiveIntegerOperation {
     }
 
     // real divide
-    public static String divide(String a, String b, int precision) throws ArithmeticException {
+    public static String divide(String a, String b, int precision, boolean showRedundantDecimal) throws ArithmeticException {
         String[] div_mod = divideAndMod(a, b);
         String intDivResult = div_mod[0];
         String frcDivResult;
@@ -147,8 +147,13 @@ public class PositiveIntegerOperation {
 
         frcDivResult = frcDivResultBuf.toString();
         frcDivResult = removePostZero(frcDivResult);
+        if(frcDivResult.length() < precision && showRedundantDecimal)
+            frcDivResult += Stream.iterate("0", ch -> "0").limit(precision - frcDivResult.length()).collect(Collectors.joining(""));
 
-        return isZero(frcDivResult) ? intDivResult : intDivResult + "." + frcDivResult;
+        if(showRedundantDecimal)
+            return precision == 0 ? intDivResult : intDivResult + "." + frcDivResult;
+        else
+            return isZero(frcDivResult) || precision == 0 ? intDivResult : intDivResult + "." + frcDivResult;
     }
 
     // integer mod

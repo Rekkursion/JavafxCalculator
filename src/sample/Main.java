@@ -23,7 +23,7 @@ public class Main extends Application {
 
         primaryStage.setTitle("Javafx Calculator");
         primaryStage.setResizable(false);
-        primaryStage.setScene(new Scene(root, 676, 550));
+        primaryStage.setScene(new Scene(root, 676, 575));
         primaryStage.show();
 
         // ========================================================================================

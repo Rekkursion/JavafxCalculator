@@ -36,3 +36,8 @@
     -fx-base: white;
     -fx-background: rgb(225, 228, 203);
 }
+
+.slider .thumb, .track {
+    -fx-border-radius: 0 0 0 0;
+    -fx-background-radius: 0 0 0 0;
+}
