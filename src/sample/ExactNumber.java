@@ -231,6 +231,8 @@ public class ExactNumber {
     // convert numerator and denominator to fraction style
     private void toFractionStyle_update(String a, String b) throws ArithmeticException {
         toFractionStyleWithoutSigned_update(a, b);
+        if(PositiveIntegerOperation.isZero(a))
+            isNeg = false;
         fractionStyle = (isNeg ? "-" : "") + fractionStyle;
     }
 
@@ -267,7 +269,6 @@ public class ExactNumber {
         // intPart is 0, frcPart is 0 as well
         if(PositiveIntegerOperation.isZero(intPartBuf.toString()) && PositiveIntegerOperation.isZero(frcPartBuf.toString())) {
             isNegative = false;
-            scientificNotationStyle = "0.0";
         }
         // intPart is 0
         else if(PositiveIntegerOperation.isZero(intPartBuf.toString())) {
