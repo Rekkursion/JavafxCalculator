@@ -55,7 +55,7 @@
             <Group fx:id="grp_precision">
                 <HBox>
                     <Label fx:id="lbl_precision_name" text="Decimal precision" />
-                    <Slider fx:id="sld_precision" blockIncrement="1" value="10" min="0" max="1000" prefWidth="416" />
+                    <Slider fx:id="sld_precision" blockIncrement="1" value="5" min="0" max="100" prefWidth="416" />
                     <Label fx:id="lbl_precision_value" />
                 </HBox>
             </Group>

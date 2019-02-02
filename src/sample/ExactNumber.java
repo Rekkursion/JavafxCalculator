@@ -4,7 +4,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ExactNumber {
-    private static int decimalPrecision = 10;
+    private static int decimalPrecision = 5;
     private static boolean showRedundantDecimal = false;
     public String numerator;
     public String denominator;

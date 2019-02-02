@@ -56,6 +56,7 @@ public class NumberPadController {
             ExactNumber.setShowRedundantDecimal(newValue);
         }));
 
+        ExactNumber.setDecimalPrecision((int)sld_precision.getValue());
         lbl_precision_value.setText(String.format("%4d", (int)sld_precision.getValue()));
         sld_precision.setBlockIncrement(1);
         sld_precision.valueProperty().addListener(((observable, oldValue, newValue) -> {

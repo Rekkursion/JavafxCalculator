@@ -132,7 +132,7 @@ public class PositiveIntegerOperation {
         StringBuilder frcDivResultBuf = new StringBuilder();
         int cursor = 0;
 
-        while(cursor < precision) {
+        while(cursor < precision + 1) {
             minuend += "0";
 
             int quot = 0;
@@ -146,7 +146,29 @@ public class PositiveIntegerOperation {
         }
 
         frcDivResult = frcDivResultBuf.toString();
+        // si she wu ru
+        if(frcDivResult.charAt(frcDivResult.length() - 1) >= '5') {
+            // only a digit in fraction part: integer part plus 1 and set fraction part to zero
+            if(frcDivResult.length() == 1) {
+                intDivResult = add(intDivResult, "1");
+                frcDivResult = "0";
+            }
+            // many digits (>= 2) in fraction part
+            else {
+                frcDivResult = add(frcDivResult.substring(0, frcDivResult.length() - 1), "1");
+                // carry to integer part
+                if(frcDivResult.matches("^10+")) {
+                    intDivResult = add(intDivResult, "1");
+                    frcDivResult = frcDivResult.substring(1);
+                }
+            }
+        }
+        // discard the last digit (else if (frcDivResult.charAt(frcDivResult.length() - 1) < '5') )
+        else
+            frcDivResult = frcDivResult.substring(0, frcDivResult.length() - 1);
+
         frcDivResult = removePostZero(frcDivResult);
+        // put redundant zeroes to the tail if user want to show redundant zeroes
         if(frcDivResult.length() < precision && showRedundantDecimal)
             frcDivResult += Stream.iterate("0", ch -> "0").limit(precision - frcDivResult.length()).collect(Collectors.joining(""));
 
