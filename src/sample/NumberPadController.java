@@ -31,15 +31,18 @@ public class NumberPadController {
     private boolean errorHappened = false;
     private Variable selectedVar = null;
     private ArrayDeque<String> history = null;
+    private ArrayDeque<String> undoHistory = null;
     private static final int MAX_HISTORY_SIZE = 200002;
     private boolean undoing = false;
+    private boolean redoing = false;
 
     @FXML BorderPane root_pane;
     @FXML Button btn_add_left, btn_add_cursor, btn_add_right;
     @FXML GridPane gpn_number_pad;
     @FXML private TextField txf_show;
     @FXML private Button btn_one, btn_two, btn_three, btn_four, btn_five, btn_six, btn_seven, btn_eight, btn_nine, btn_zero;
-    @FXML private Button btn_dot, btn_plus, btn_div, btn_multi, btn_minus, btn_calc, btn_parens, btn_backspace, btn_clear, btn_save_as_var, btn_undo;
+    @FXML private Button btn_dot, btn_plus, btn_div, btn_multi, btn_minus, btn_calc, btn_parens, btn_backspace, btn_clear, btn_save_as_var;
+    @FXML private Button btn_undo, btn_redo;
     @FXML private VBox vbx_vars;
     @FXML private Slider sld_precision;
     @FXML private Label lbl_precision_value, lbl_precision_name;
@@ -79,8 +82,17 @@ public class NumberPadController {
                 if(history.size() == MAX_HISTORY_SIZE)
                     history.pollFirst();
                 history.offerLast(oldValue);
+                btn_undo.setDisable(history.isEmpty());
+
+                if(!redoing) {
+                    undoHistory.clear();
+                    btn_redo.setDisable(true);
+                }
             }
         });
+        undoHistory = new ArrayDeque<>();
+        btn_undo.setDisable(true);
+        btn_redo.setDisable(true);
 
         tbv_vars.setEditable(true);
 
@@ -361,9 +373,18 @@ public class NumberPadController {
 
     // undo the input, takes from the history array deque
     public void btnUndoClick(ActionEvent actionEvent) {
+
+    }
+
+    public void btnUndoRedoClick(ActionEvent actionEvent) {
         Object clickedBtn = actionEvent.getSource();
+
         if(clickedBtn == btn_undo) {
             if(!history.isEmpty()) {
+                if(undoHistory.size() == MAX_HISTORY_SIZE)
+                    undoHistory.pollFirst();
+                undoHistory.offerLast(expression.toString());
+
                 expression.delete(0, expression.length());
                 expression.append(history.pollLast());
                 undoing = true;
@@ -375,6 +396,22 @@ public class NumberPadController {
                 mouseAnchor.set(txf_show.getCaretPosition());
             }
         }
+        else if(clickedBtn == btn_redo) {
+            if(!undoHistory.isEmpty()) {
+                expression.delete(0, expression.length());
+                expression.append(undoHistory.pollLast());
+                redoing = true;
+                txf_show.setText(expression.toString());
+                redoing = false;
+                txf_show.requestFocus();
+                txf_show.positionCaret(expression.length());
+                mouseCaret.set(txf_show.getCaretPosition());
+                mouseAnchor.set(txf_show.getCaretPosition());
+            }
+        }
+
+        btn_undo.setDisable(history.isEmpty());
+        btn_redo.setDisable(undoHistory.isEmpty());
     }
 
     // click the expression text field
@@ -387,6 +424,27 @@ public class NumberPadController {
 
     // key released when expression text field is focused
     public void txfKeyReleased(KeyEvent keyEvent) {
+        if(errorHappened) {
+            Character tmpChar = null;
+            if(txf_show.getText().length() > 0 && (keyEvent.getCode().isKeypadKey() || keyEvent.getCode().isDigitKey() || keyEvent.getCode().isLetterKey()))
+                tmpChar = txf_show.getText().charAt(txf_show.getText().length() - 1);
+
+            expression.delete(0, expression.length());
+            txf_show.setText("");
+            mouseCaret.set(0);
+            mouseAnchor.set(0);
+
+            if(tmpChar != null) {
+                expression.append(tmpChar);
+                txf_show.setText(tmpChar.toString());
+                txf_show.positionCaret(1);
+                mouseCaret.set(1);
+                mouseAnchor.set(1);
+            }
+
+            errorHappened = false;
+        }
+
         // arrow keys
         if(keyEvent.getCode() == KeyCode.LEFT || keyEvent.getCode() == KeyCode.RIGHT || keyEvent.getCode() == KeyCode.UP || keyEvent.getCode() == KeyCode.DOWN || keyEvent.getCode() == KeyCode.HOME || keyEvent.getCode() == KeyCode.END) {
             mouseAnchor.set(txf_show.getCaretPosition());
@@ -547,13 +605,21 @@ public class NumberPadController {
         for(int k = 0; k < exp.length(); ++k) {
             char c = exp.charAt(k);
 
-            // TODO: scientific notation support
+            /**
+             * 2019 02 02 TODO: scientific notation support
+             * 2019 02 02 update: done
+             */
             // a number
             if((c >= '0' && c <= '9') || c == '.') {
                 // build the number
                 StringBuilder numBuf = new StringBuilder();
                 String num;
-                while(k < exp.length() && ((exp.charAt(k) >= '0' && exp.charAt(k) <= '9') || exp.charAt(k) == '.')) {
+                // '0'-'9' or '.' or 'e' (or '-')
+                while(k < exp.length() && ((exp.charAt(k) >= '0' && exp.charAt(k) <= '9') || exp.charAt(k) == '.' || exp.charAt(k) == 'e')) {
+                    if(exp.charAt(k) == 'e' && k + 1 < exp.length() && exp.charAt(k + 1) == '-') {
+                        numBuf.append(exp.charAt(k));
+                        ++k;
+                    }
                     numBuf.append(exp.charAt(k));
                     ++k;
                 }
@@ -563,6 +629,20 @@ public class NumberPadController {
                 // duplicate '.'s in a number, invalid
                 if(num.indexOf('.') != num.lastIndexOf('.'))
                     throw new NumberFormatException();
+                // invalid number
+                if(!ExactNumber.checkIsValidNumber(num))
+                    throw new NumberFormatException();
+
+                // num is a scientific notation style string
+                if(num.indexOf('e') != -1) {
+                    try {
+                        num = ExactNumber.convertScientificNotationStyle2FractionStyle(num);
+                        if(num.length() >= 20000)
+                            throw new NumberFormatException();
+                    } catch(NumberFormatException e) {
+                        throw e;
+                    }
+                }
 
                 postfix.add(new ExactNumber(num));
             }
@@ -601,7 +681,8 @@ public class NumberPadController {
                 }
             }
 
-            // variable
+            // TODO: function style support, e.x. 3 + cos(0.4 * sin(5.2 * (2 + 4.1)) / exp(tan(0.5)))
+            // variable or function
             else if(c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
                 StringBuilder varNameBuf = new StringBuilder();
                 final String varName;

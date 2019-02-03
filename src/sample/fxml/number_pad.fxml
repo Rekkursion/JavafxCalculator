@@ -40,7 +40,8 @@
             <Button fx:id="btn_clear" onAction="#numberPadButtonsClick" text="Clear" GridPane.columnIndex="4" GridPane.rowIndex="2" prefHeight="60" prefWidth="60" />
 
             <Button fx:id="btn_save_as_var" onAction="#saveAsVarButtonClick" text="Save as var" GridPane.columnIndex="3" GridPane.rowIndex="3" GridPane.columnSpan="2" prefHeight="60" prefWidth="130" />
-            <Button fx:id="btn_undo" onAction="#btnUndoClick" text="Undo" GridPane.columnIndex="0" GridPane.rowIndex="6" prefHeight="60" prefWidth="60" />
+            <Button fx:id="btn_undo" onAction="#btnUndoRedoClick" text="Undo" GridPane.columnIndex="0" GridPane.rowIndex="6" prefHeight="60" prefWidth="60" />
+            <Button fx:id="btn_redo" onAction="#btnUndoRedoClick" text="Redo" GridPane.columnIndex="1" GridPane.rowIndex="6" prefHeight="60" prefWidth="60" />
         </GridPane>
     </center>
     <right>
@@ -55,7 +56,7 @@
         <VBox>
             <Group>
                 <AnchorPane prefWidth="675">
-                    <CheckBox fx:id="chk_use_scientific_notation" text="Use scientific notation" AnchorPane.rightAnchor="0" />
+                    <CheckBox fx:id="chk_use_scientific_notation" text="Result in scientific notation" AnchorPane.rightAnchor="0" />
                     <CheckBox fx:id="chk_show_redundant_zero" text="Show redundant decimal ZERO" AnchorPane.leftAnchor="0" />
                 </AnchorPane>
             </Group>

@@ -23,7 +23,8 @@ public class SaveAsVarController {
         // set the text of rules
         String[] varNameRules = {"-Alphabets(a-zA-Z) and underline(_) only.",
                 "-There must be at least one alphabet.",
-                "-The range of length must be in 1 to 100."};
+                "-\"e\" is an invalid variable name.",
+                "-The length must be between 1 and 100.",};
         lbl_var_name_rule.setText(Arrays.stream(varNameRules).collect(Collectors.joining("\n")));
         btn_confirm_name.setDisable(true);
     }
@@ -43,7 +44,7 @@ public class SaveAsVarController {
                 btnConfirmClick(null);
         }
         else {
-            varName = txf_var_name.getText();
+            varName = txf_var_name.getText().trim();
             btn_confirm_name.setDisable(!isValidName());
         }
     }
@@ -54,6 +55,9 @@ public class SaveAsVarController {
 
     public static boolean isValidName(String name) {
         if(name == null)
+            return false;
+
+        if(name.equals("e"))
             return false;
         return name.matches("([a-zA-Z_]*[a-zA-Z][a-zA-Z_]*){1,100}");
     }

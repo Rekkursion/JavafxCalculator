@@ -167,7 +167,6 @@ public class ExactNumber {
         return (hasValidExp && hasValidBase);
     }
 
-    // TODO: still no test the convert
     // static method: convert a scientific notation style number into a fraction style number
     public static String convertScientificNotationStyle2FractionStyle(String s) throws NumberFormatException {
         if(!checkIsValidNumber(s))
@@ -202,6 +201,7 @@ public class ExactNumber {
 
             // current character is decimal point
             if(s.charAt(curIdx) == '.') {
+                ++curIdx;
                 for(; curIdx < s.length() && s.charAt(curIdx) >= '0' && s.charAt(curIdx) <= '9'; ++curIdx)
                     frcPartBuf.append(s.charAt(curIdx));
                 // meet the character 'e'
@@ -457,8 +457,6 @@ public class ExactNumber {
         }
         // intPart is not 0
         else {
-            // TODO: variable name strict cannot use e or E, convert scientific notation style to fraction style
-            // TODO: hint: e只可能夾在數字之中，或是右邊是負號
             while(intPartBuf.length() > 1) {
                 ++exponential;
                 frcPartBuf.insert(0, intPartBuf.charAt(intPartBuf.length() - 1));

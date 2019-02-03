@@ -38,7 +38,7 @@ public class Main extends Application {
 
         saveAsVarStage = new Stage();
         saveAsVarStage.setTitle("Save as variable");
-        saveAsVarStage.setScene(new Scene(saveAsVarRoot, 350, 200));
+        saveAsVarStage.setScene(new Scene(saveAsVarRoot, 350, 217));
         saveAsVarStage.setResizable(false);
         saveAsVarStage.initStyle(StageStyle.UTILITY);
         saveAsVarStage.setOnHiding(new EventHandler<WindowEvent>() {

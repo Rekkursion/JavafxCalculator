@@ -7,7 +7,7 @@
     -fx-font-size: 17pt;
 }
 
-#btn_save_as_var, #btn_backspace, #btn_clear, #btn_undo {
+#btn_save_as_var, #btn_backspace, #btn_clear, #btn_undo, #btn_redo {
     -fx-padding: 0pt;
     -fx-font-size: 13pt;
 }

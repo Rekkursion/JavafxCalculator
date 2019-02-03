@@ -5,3 +5,15 @@
 .label {
     -fx-font-size: 10pt;
 }
+
+.text-field {
+    -fx-prompt-text-fill: gray;
+}
+
+.text-field .text {
+    -fx-effect: dropshadow(two-pass-box, rgb(100, 100, 100), .5, 10, 1, 1);
+}
+
+.text-field:empty .text {
+    -fx-effect: null;
+}
