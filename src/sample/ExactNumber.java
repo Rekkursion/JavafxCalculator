@@ -103,9 +103,13 @@ public class ExactNumber {
     }
 
     // static method: set new decimal precision
+    public static int getDecimalPrecision() { return decimalPrecision; }
+
+    // static method: set new decimal precision
     public static void setDecimalPrecision(int newDecimalPrecision) {
         decimalPrecision = newDecimalPrecision;
     }
+
 
     // static method: check if the string is a valid number
     public static boolean checkIsValidNumber(String s) {
@@ -274,6 +278,7 @@ public class ExactNumber {
             return (isNegative ? "-" : "") + intPart;
         return (isNegative ? "-" : "") + intPart + "." + frcPart;
     }
+
     // ===================================================================================
 
     // add
@@ -386,12 +391,193 @@ public class ExactNumber {
         return ret;
     }
 
+    // real power (ex: 3.1^-2.6)
+    // 9^0.95 = 8.63626
+    public static ExactNumber realPower(ExactNumber a, ExactNumber b) throws ArithmeticException {
+        a.reduct_update();
+        b.reduct_update();
+
+        // 0^any = 0
+        if(ExactNumber.isZero(a))
+            return new ExactNumber("0");
+        // any^0 = 1
+        if(ExactNumber.isZero(b))
+            return new ExactNumber("1");
+        // any^-x = (1/any)^x
+        if(b.isNeg) {
+            String tmp = a.numerator;
+            a.numerator = a.denominator;
+            a.denominator = tmp;
+            b.isNeg = false;
+        }
+
+        boolean isNegative = (a.isNeg && !PositiveIntegerOperation.isEven(b.numerator));
+        a.isNeg = false;
+        // need to kaifang but is negative, error
+        if(isNegative && !ExactNumber.isInteger(b))
+            throw new ArithmeticException();
+
+        /*
+        // a^b.numerator part (cifang)
+        ExactNumber onlyCifangPart = power(a, new ExactNumber(b.numerator));
+
+        // a^b.denominator part (kaifang)
+        String numeRootResult = PositiveIntegerOperation.root(onlyCifangPart.numerator, b.denominator);
+        String denoRootResult = PositiveIntegerOperation.root(onlyCifangPart.denominator, b.denominator);
+        ExactNumber resultNumePart = new ExactNumber(numeRootResult);
+        ExactNumber resultDenoPart = new ExactNumber(denoRootResult);
+        ExactNumber result = divide(resultNumePart, resultDenoPart);
+        */
+
+        // a^b.denominator part (kaifang)
+        String numeRootResult = PositiveIntegerOperation.root(a.numerator, b.denominator);
+        String denoRootResult = PositiveIntegerOperation.root(a.denominator, b.denominator);
+        ExactNumber resultNumePart = new ExactNumber(numeRootResult);
+        ExactNumber resultDenoPart = new ExactNumber(denoRootResult);
+        ExactNumber onlyKaifangResult = divide(resultNumePart, resultDenoPart);
+
+        // a^b.numerator part (cifang)
+        ExactNumber result = power(onlyKaifangResult, new ExactNumber(b.numerator));
+
+        return new ExactNumber(result.numerator, result.denominator, isNegative);
+    }
+
+    // power (ex: 3.1^-2)
+    public static ExactNumber power(ExactNumber a, ExactNumber b) throws ArithmeticException {
+        if(!ExactNumber.isInteger(b))
+            throw new ArithmeticException();
+
+        // 0^any = 0
+        if(ExactNumber.isZero(a))
+            return new ExactNumber("0");
+        // any^0 = 1
+        if(ExactNumber.isZero(b))
+            return new ExactNumber("1");
+        // 1^any or (-1)^any
+        if(a.numerator.equals("1") && a.denominator.equals("1")) {
+            // (-1)^any = any or -any
+            if(a.isNeg)
+                return new ExactNumber("1", "1", !PositiveIntegerOperation.isEven(b.numerator));
+            // 1^any = 1
+            else
+                return new ExactNumber("1");
+        }
+        // any^1 = any
+        if(b.numerator.equals("1"))
+            return a;
+        // any^-x = (1/any)^x
+        if(b.isNeg) {
+            String tmp = a.numerator;
+            a.numerator = a.denominator;
+            a.denominator = tmp;
+            b.isNeg = false;
+        }
+
+        boolean isNegative = (a.isNeg && !PositiveIntegerOperation.isEven(b.numerator));
+        a.isNeg = false;
+
+        String newNume = "1";
+        String newDeno = "1";
+
+        /*
+        if(PositiveIntegerOperation.compareTwoPositiveIntegers(b.numerator, "2147483647") <= 0) {
+            int cif = Integer.parseInt(b.numerator);
+            String numeMultisor = a.numerator;
+            String denoMultisor = a.denominator;
+
+            // 3^10 = 3^2 * 3^8
+            for(int k = 0; k < 32; ++k) {
+                if((cif & (1 << k)) != 0) {
+                    newNume = PositiveIntegerOperation.multiple(newNume, numeMultisor);
+                    //newDeno = PositiveIntegerOperation.multiple(newDeno, denoMultisor);
+                }
+
+                numeMultisor = PositiveIntegerOperation.multiple(numeMultisor, numeMultisor);
+                //denoMultisor = PositiveIntegerOperation.multiple(denoMultisor, denoMultisor);
+                System.out.println("=> " + numeMultisor.length() + "\n");
+            }
+        }
+        else {
+            // will be extremely slow
+            // 2^20000 will be slow obviously
+            String counter = "1";
+            newNume = a.numerator;
+            newDeno = a.denominator;
+            while(PositiveIntegerOperation.compareTwoPositiveIntegers(counter, b.numerator) < 0) {
+                newNume = PositiveIntegerOperation.multiple(newNume, a.numerator);
+                newDeno = PositiveIntegerOperation.multiple(newDeno, a.denominator);
+                counter = PositiveIntegerOperation.add(counter, "1");
+            }
+        }
+        */
+
+        // 2^20000 will be slow obviously
+        if(PositiveIntegerOperation.compareTwoPositiveIntegers(b.numerator, "2147483647") <= 0) {
+            int counter = 1, b_nume = Integer.parseInt(b.numerator);
+            newNume = a.numerator;
+            newDeno = a.denominator;
+
+            while(counter < b_nume) {
+                newNume = PositiveIntegerOperation.multiple(newNume, a.numerator);
+                newDeno = PositiveIntegerOperation.multiple(newDeno, a.denominator);
+                ++counter;
+            }
+        }
+        else {
+            String counter = "1";
+            newNume = a.numerator;
+            newDeno = a.denominator;
+
+            while(PositiveIntegerOperation.compareTwoPositiveIntegers(counter, b.numerator) < 0) {
+                newNume = PositiveIntegerOperation.multiple(newNume, a.numerator);
+                newDeno = PositiveIntegerOperation.multiple(newDeno, a.denominator);
+                counter = PositiveIntegerOperation.add(counter, "1");
+            }
+        }
+
+        return new ExactNumber(newNume, newDeno, isNegative);
+    }
+
+    // factorial
+    public static ExactNumber factorial(ExactNumber x) throws ArithmeticException, NumberFormatException, NumberTooBigException {
+        if(!ExactNumber.isInteger(x) || x.isNeg)
+            throw new ArithmeticException();
+
+        String retString = PositiveIntegerOperation.factorial(x.numerator);
+        return new ExactNumber(retString);
+    }
+
+    // sin
+    public static ExactNumber sin(ExactNumber x) throws ArithmeticException {
+        // TODO
+        return null;
+    }
+
+    // is zero
+    public static boolean isZero(ExactNumber x) throws ArithmeticException {
+        if(PositiveIntegerOperation.isZero(x.denominator))
+            throw new ArithmeticException();
+        return PositiveIntegerOperation.isZero(x.numerator);
+    }
+
+    // is integer
+    public static boolean isInteger(ExactNumber x) throws ArithmeticException {
+        if(PositiveIntegerOperation.isZero(x.denominator))
+            throw new ArithmeticException();
+        x.reduct_update();
+        return x.denominator.equals("1");
+    }
+
+    // ===================================================================================
+
     // reduct (yue fen)
     private void reduct_update() throws ArithmeticException {
         try {
             String gcd = PositiveIntegerOperation.gcd(numerator, denominator);
             numerator = PositiveIntegerOperation.divide(numerator, gcd);
             denominator = PositiveIntegerOperation.divide(denominator, gcd);
+            numerator = PositiveIntegerOperation.removePreZero(numerator);
+            denominator = PositiveIntegerOperation.removePreZero(denominator);
             toFractionStyle_update(numerator, denominator);
         } catch (ArithmeticException e) {
             throw e;

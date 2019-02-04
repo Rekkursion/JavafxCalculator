@@ -1,5 +1,9 @@
 package sample;
 
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+
+import java.io.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -187,6 +191,162 @@ public class PositiveIntegerOperation {
         return divideAndMod(a, b)[1];
     }
 
+    // root, a^(1/b)
+    public static String root(String a, String b) throws ArithmeticException {
+        if(compareTwoPositiveIntegers(a, "2147483647") <= 0 && compareTwoPositiveIntegers(b, "2147483647") <= 0) {
+            int ai = Integer.parseInt(a);
+            int bi = Integer.parseInt(b);
+            return String.valueOf(Math.pow((double)ai, (double)1.0 / bi));
+        }
+
+        if(compareTwoPositiveIntegers(a, "0") < 0 || compareTwoPositiveIntegers(b, "0") < 0)
+            throw new ArithmeticException();
+        // 1^(1/any) = 1
+        if(a.equals("1"))
+            return "1";
+
+        ExactNumber low = new ExactNumber("0");
+        ExactNumber high = new ExactNumber(a);
+        ExactNumber goal = new ExactNumber(a);
+        ExactNumber cur = null;
+        final int ITERATE_TIMES = 100;
+        int b_int = Integer.parseInt(b);
+
+        for(int k = 0; k < ITERATE_TIMES; ++k) {
+            ExactNumber added = ExactNumber.add(low, high);
+            String nume = added.numerator;
+            String deno = multiple(added.denominator, "2");
+            cur = new ExactNumber(PositiveIntegerOperation.divide(nume, deno, ExactNumber.getDecimalPrecision(), true));
+
+            ExactNumber test = new ExactNumber(cur);
+            for(int j = 1; j < b_int; ++j)
+                test = ExactNumber.multiple(test, cur);
+            ExactNumber minusResult = ExactNumber.minus(test, goal);
+
+            // test < goal
+            if(minusResult.isNeg)
+                low = new ExactNumber(cur);
+            // test > goal
+            else
+                high = new ExactNumber(cur);
+        }
+
+        return cur.fractionStyle;
+
+        /*
+        // a^(1/b):
+        // f(x) = x^b - a = 0
+        // Newton's Method
+        ExactNumber cur = new ExactNumber(a);
+        ExactNumber ex_a = new ExactNumber(a);
+        ExactNumber ex_b = new ExactNumber(b);
+
+        for(int itTimes = 1; itTimes <= ITERATE_TIMES; ++itTimes) {
+            ExactNumber numeratorInFormula = ExactNumber.minus(ExactNumber.power(cur, ex_b), ex_a);
+            ExactNumber denominatorInFormula = ExactNumber.multiple(ex_b, ExactNumber.power(cur, ExactNumber.minus(ex_b, new ExactNumber("1"))));
+
+            String nume = multiple(numeratorInFormula.numerator, denominatorInFormula.denominator);
+            String deno = multiple(numeratorInFormula.denominator, denominatorInFormula.numerator);
+            String divideResult = divide(nume, deno, ExactNumber.getDecimalPrecision(), true);
+
+            cur = ExactNumber.minus(cur, new ExactNumber(divideResult));
+
+            //System.out.println(itTimes + ": " + cur.fractionStyle);
+        }
+
+        ExactNumber ret = new ExactNumber(cur.numerator, cur.denominator, cur.isNeg);
+        return ret.fractionStyle;
+        */
+    }
+
+    // integer power
+    public static String power(String a, String b) throws ArithmeticException {
+        a = removePreZero(a);
+        b = removePreZero(b);
+
+        // 0^any = 0
+        if(isZero(a))
+            return "0";
+        // any^0 = 1
+        if(isZero(b))
+            return "1";
+        // 1^any or (-1)^any
+        if(a.equals("1"))
+            return "1";
+        // any^1 = any
+        if(b.equals("1"))
+            return a;
+
+        String ret = "1";
+
+        if(compareTwoPositiveIntegers(b, "2147483647") <= 0) {
+            int counter = 1, b_int = Integer.parseInt(b);
+            ret = a;
+            while(counter < b_int) {
+                ret = multiple(ret, a);
+                ++counter;
+            }
+        }
+        else {
+            String counter = "1";
+            ret = a;
+            while(compareTwoPositiveIntegers(counter, b) < 0) {
+                ret = multiple(ret, a);
+                counter = add(counter, "1");
+            }
+        }
+
+        return ret;
+    }
+
+    // factorial
+    public static String factorial(String str) throws ArithmeticException, NumberFormatException, NumberTooBigException {
+        if(str == null || str.length() == 0 || str.charAt(0) == '-')
+            throw new ArithmeticException();
+
+        if(compareTwoPositiveIntegers(str, "2147483647") > 0)
+            throw new NumberTooBigException();
+
+        int x = 0;
+        try {
+            x = Integer.parseInt(str);
+        } catch (Exception e) {
+            throw new NumberFormatException();
+        }
+
+        int facTableLength = FactorialTable.factorialTable.length;
+        String ret = "";
+        // x < table size, take out the value from table straightforwardly
+        if(x < facTableLength)
+            return FactorialTable.factorialTable[x];
+        // x in the not-too-slow range, calculate the value
+        else if(x < 7000) {
+            ret = FactorialTable.factorialTable[facTableLength - 1];
+            for(int k = facTableLength; k <= x; ++k)
+                ret = multiple(ret, String.valueOf(k));
+        }
+        // x out of range, might be very slow
+        else {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Number is too big");
+            alert.setHeaderText("");
+            alert.setContentText("The calculation will be slow since the result is extremely big.\nThis might make you to wait a long time.\nMake sure if you want to continue the calculation.");
+            alert.showAndWait();
+
+            ButtonType alertResult = alert.getResult();
+            if(alertResult == ButtonType.OK) {
+                ret = FactorialTable.factorialTable[facTableLength - 1];
+                for(int k = facTableLength; k <= x; ++k)
+                    ret = multiple(ret, String.valueOf(k));
+            }
+            else
+                throw new NumberTooBigException();
+        }
+
+
+        return ret;
+    }
+
     // get GCD
     public static String gcd(String a, String b) throws ArithmeticException {
         if(isZero(b))
@@ -254,5 +414,12 @@ public class PositiveIntegerOperation {
     // check if the value is zero
     public static boolean isZero(String str) {
         return str.matches("0+");
+    }
+
+    // check if is an even number
+    public static boolean isEven(String str) {
+        if(str == null || str.length() == 0)
+            return false;
+        return ((str.charAt(str.length() - 1) - '0') & 1) == 0;
     }
 }

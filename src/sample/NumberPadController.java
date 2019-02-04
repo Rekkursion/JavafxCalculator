@@ -2,6 +2,7 @@ package sample;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -35,14 +36,16 @@ public class NumberPadController {
     private static final int MAX_HISTORY_SIZE = 200002;
     private boolean undoing = false;
     private boolean redoing = false;
+    private ObservableMap<String, Function> funcMap = null;
+    private static final int FUNCTION_OPERATOR = 11;
 
     @FXML BorderPane root_pane;
     @FXML Button btn_add_left, btn_add_cursor, btn_add_right;
     @FXML GridPane gpn_number_pad;
     @FXML private TextField txf_show;
     @FXML private Button btn_one, btn_two, btn_three, btn_four, btn_five, btn_six, btn_seven, btn_eight, btn_nine, btn_zero;
-    @FXML private Button btn_dot, btn_plus, btn_div, btn_multi, btn_minus, btn_calc, btn_parens, btn_backspace, btn_clear, btn_save_as_var;
-    @FXML private Button btn_undo, btn_redo;
+    @FXML private Button btn_dot, btn_plus, btn_div, btn_multi, btn_minus, btn_real_power, btn_calc, btn_factorial, btn_parens;
+    @FXML private Button btn_backspace, btn_clear, btn_save_as_var, btn_undo, btn_redo;
     @FXML private VBox vbx_vars;
     @FXML private Slider sld_precision;
     @FXML private Label lbl_precision_value, lbl_precision_name;
@@ -55,6 +58,11 @@ public class NumberPadController {
 
     @FXML
     public void initialize() {
+        funcMap = FXCollections.observableHashMap();
+        funcMap.put("sin", new Function("sin", 1, true));
+        funcMap.put("cos", new Function("cos", 1, true));
+
+        // scientific notation checkbox
         chk_use_scientific_notation.setSelected(false);
         chk_use_scientific_notation.selectedProperty().addListener(((observable, oldValue, newValue) -> {
             // disable or enable decimal precision control functions
@@ -63,11 +71,13 @@ public class NumberPadController {
             chk_show_redundant_zero.setDisable(newValue);
         }));
 
+        // show redundant zero checkbox
         chk_show_redundant_zero.setSelected(false);
         chk_show_redundant_zero.selectedProperty().addListener(((observable, oldValue, newValue) -> {
             ExactNumber.setShowRedundantDecimal(newValue);
         }));
 
+        // precision setting
         ExactNumber.setDecimalPrecision((int)sld_precision.getValue());
         lbl_precision_value.setText(String.format("%4d", (int)sld_precision.getValue()));
         sld_precision.setBlockIncrement(1);
@@ -76,6 +86,7 @@ public class NumberPadController {
             ExactNumber.setDecimalPrecision((int)newValue.doubleValue());
         }));
 
+        // undo and redo feature
         history = new ArrayDeque<>();
         txf_show.textProperty().addListener((observable, oldValue, newValue) -> {
             if(!undoing) {
@@ -217,6 +228,10 @@ public class NumberPadController {
             insertValue = "/";
         else if(clickedBtn == btn_multi)
             insertValue = "*";
+        else if(clickedBtn == btn_real_power)
+            insertValue = "^";
+        else if(clickedBtn == btn_factorial)
+            insertValue = "!";
         else if(clickedBtn == btn_parens)
             insertValue = "()";
         else if(clickedBtn == btn_backspace)
@@ -304,19 +319,30 @@ public class NumberPadController {
     // save the value as variable to the list, and show in the table view
     public void saveAsVarButtonClick(ActionEvent actionEvent) throws NumberFormatException, ArithmeticException, NoVariableException {
         Object clickedBtn = actionEvent.getSource();
+        boolean hasError = false;
+
         if(clickedBtn == btn_save_as_var && Main.saveAsVarStage != null && !errorHappened && !txf_show.getText().equals("")) {
             String result;
             try {
                 result = calc(expression.toString());
             } catch (ArithmeticException e) {
+                hasError = true;
                 result = ARITHM_ERR_MSG;
             } catch (NumberFormatException e) {
+                hasError = true;
                 result = FORMAT_ERR_MSG;
             } catch (NoVariableException e) {
+                hasError = true;
+                result = e.getMessage();
+            } catch (NoFunctionException e) {
+                hasError = true;
+                result = e.getMessage();
+            } catch (NumberTooBigException e) {
+                hasError = true;
                 result = e.getMessage();
             }
 
-            if(result.equals(ARITHM_ERR_MSG) || result.equals(FORMAT_ERR_MSG) || result.equals("No such variable")) {
+            if(hasError) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Error");
                 alert.setHeaderText("");
@@ -369,11 +395,6 @@ public class NumberPadController {
         }
 
         txf_show.setText(expression.toString());
-    }
-
-    // undo the input, takes from the history array deque
-    public void btnUndoClick(ActionEvent actionEvent) {
-
     }
 
     public void btnUndoRedoClick(ActionEvent actionEvent) {
@@ -481,6 +502,12 @@ public class NumberPadController {
         } catch (NoVariableException e) {
             errorHappened = true;
             result = e.getMessage();
+        } catch (NoFunctionException e) {
+            errorHappened = true;
+            result = e.getMessage();
+        } catch (NumberTooBigException e) {
+            errorHappened = true;
+            result = e.getMessage();
         }
 
         expression.delete(0, expression.length());
@@ -522,48 +549,81 @@ public class NumberPadController {
     }
 
     // calculate the value of the expression
-    private String calc(String exp) throws NumberFormatException, ArithmeticException, NoVariableException {
+    private String calc(String exp) throws NumberFormatException, ArithmeticException, NoVariableException, NoFunctionException, NumberTooBigException {
         ArrayList<Object> postfix;
         ArrayDeque<ExactNumber> numStk = new ArrayDeque<>();
 
         postfix = toPostfix(exp);
+
         for(Object ele: postfix) {
-            // operators
+            // operators or functions
             if(ele instanceof String) {
                 try {
-                    String op = (String)ele;
-                    ExactNumber num2 = numStk.pop();
-                    ExactNumber num1 = null;
-                    if(op.charAt(0) != 'p' && op.charAt(0) != 'n')
-                         num1 = numStk.pop();
-                    ExactNumber result = null;
+                    // functions
+                    if(((String)ele).charAt(0) == '#') {
+                        String funcString = ((String)ele).substring(1);
+                        Function func = funcMap.getOrDefault(funcString, null);
+                        if(func == null)
+                            throw new NoFunctionException("No such function");
+                        int paramNum = func.getParamNum();
+                        ArrayList<ExactNumber> numberList = new ArrayList<>();
 
-                    switch(op.charAt(0)) {
-                        case '+':
-                            result = ExactNumber.add(num1, num2);
-                            break;
-                        case '-':
-                            result = ExactNumber.minus(num1, num2);
-                            break;
-                        case '*':
-                            result = ExactNumber.multiple(num1, num2);
-                            break;
-                        case '/':
-                            result = ExactNumber.divide(num1, num2);
-                            break;
-                        case 'p':
-                            result = new ExactNumber(num2);
-                            break;
-                        case 'n':
-                            result = new ExactNumber(num2.numerator, num2.denominator, !num2.isNeg);
-                            break;
+                        while(paramNum > 0) {
+                            --paramNum;
+                            numberList.add(numStk.pop());
+                        }
+
+                        // FIXME: may have exception
+                        ExactNumber result = func.call(numberList);
+                        numStk.push(result);
                     }
 
-                    if(result == null)
-                        throw new NumberFormatException();
-                    numStk.push(result);
+                    // operators
+                    else {
+                        String op = (String)ele;
+                        ExactNumber num2 = numStk.pop();
+                        ExactNumber num1 = null;
+                        if(op.charAt(0) != 'p' && op.charAt(0) != 'n' && op.charAt(0) != '!')
+                            num1 = numStk.pop();
+                        ExactNumber result = null;
+
+                        switch(op.charAt(0)) {
+                            case '+':
+                                result = ExactNumber.add(num1, num2);
+                                break;
+                            case '-':
+                                result = ExactNumber.minus(num1, num2);
+                                break;
+                            case '*':
+                                result = ExactNumber.multiple(num1, num2);
+                                break;
+                            case '/':
+                                result = ExactNumber.divide(num1, num2);
+                                break;
+                            case '^':
+                                result = ExactNumber.realPower(num1, num2);
+                                break;
+                            case '!':
+                                result = ExactNumber.factorial(num2);
+                                break;
+                            case 'p':
+                                result = new ExactNumber(num2);
+                                break;
+                            case 'n':
+                                result = new ExactNumber(num2.numerator, num2.denominator, !num2.isNeg);
+                                break;
+                        }
+
+                        if(result == null)
+                            throw new NumberFormatException();
+                        numStk.push(result);
+                    } // end of operators else
                 } catch (ArithmeticException e) {
                     throw new ArithmeticException();
+                } catch (NoFunctionException e) {
+                    throw e;
+                } catch (NumberTooBigException e) {
+                    throw e;
                 } catch (Exception e) {
                     throw new NumberFormatException();
                 }
@@ -578,19 +638,20 @@ public class NumberPadController {
             throw new NumberFormatException();
 
         ExactNumber ret = numStk.pop();
-        //System.err.println(ret.fractionStyle);
-
         return chk_use_scientific_notation.isSelected() ? ret.scientificNotationStyle : ret.fractionStyle;
     }
 
     // convert the expression to the postfix format
-    private ArrayList<Object> toPostfix(String exp) throws NumberFormatException, NoVariableException {
+    private ArrayList<Object> toPostfix(String exp) throws NumberFormatException, NoVariableException, NoFunctionException {
         ArrayList<Object> postfix = new ArrayList<>();
-        ArrayDeque<Character> opStk = new ArrayDeque<>();
+        // opStk: if the operator is begin with a '#', then it's a function
+        ArrayDeque<String> opStk = new ArrayDeque<>();
         // calculating priority of operators
         Map<Character, Integer> opPriority = new HashMap<>(){{
-            put('p', 3); // unary operator: positive
-            put('n', 3); // unary operator: negative
+            put('!', 9);
+            put('p', 6); // unary operator: positive
+            put('n', 6); // unary operator: negative
+            put('^', 3); // cifang
             put('*', 2);
             put('/', 2);
             put('+', 1);
@@ -605,10 +666,6 @@ public class NumberPadController {
         for(int k = 0; k < exp.length(); ++k) {
             char c = exp.charAt(k);
 
-            /**
-             * 2019 02 02 TODO: scientific notation support
-             * 2019 02 02 update: done
-             */
             // a number
             if((c >= '0' && c <= '9') || c == '.') {
                 // build the number
@@ -649,56 +706,76 @@ public class NumberPadController {
 
             // left parenthesis
             else if(c == '(')
-                opStk.push(c);
+                opStk.push(String.valueOf(c));
 
             // right parenthesis
             else if(c == ')') {
                 try {
-                    while(!opStk.isEmpty() && opStk.peek() != '(')
-                        postfix.add(String.valueOf(opStk.pop()));
-                    opStk.pop();
+                    while(!opStk.isEmpty() && opStk.peek().charAt(0) != '#' && !opStk.peek().equals("("))
+                        postfix.add(opStk.pop());
+                    if(opStk.peek().charAt(0) == '#')
+                        postfix.add(opStk.pop());
+                    else
+                        opStk.pop();
                 } catch(Exception e) {
                     throw new NumberFormatException();
                 }
             }
 
             // operators
-            else if(c == '+' || c == '-' || c == '*' || c == '/') {
+            else if(c == '+' || c == '-' || c == '*' || c == '/' || c == '^' || c == '!') {
                 try {
+                    // the left side of factorial must not be an operator except for factorial
+                    if(c == '!' && (k == 0 || (exp.charAt(k - 1) == '+' || exp.charAt(k - 1) == '-' || exp.charAt(k - 1) == '*' || exp.charAt(k - 1) == '/' || exp.charAt(k - 1) == '^')))
+                        throw new NumberFormatException();
+
                     // a '+' or a '-' is a unary operator if the character before it is an operator or an opened parenthesis
                     // or it's the first character in the expression
-                    if((c == '+' || c == '-') && (k == 0 || exp.charAt(k - 1) == '(' || exp.charAt(k - 1) == '+' || exp.charAt(k - 1) == '-' || exp.charAt(k - 1) == '*' || exp.charAt(k - 1) == '/'))
+                    if((c == '+' || c == '-') && (k == 0 || exp.charAt(k - 1) == '(' || exp.charAt(k - 1) == '+' || exp.charAt(k - 1) == '-' || exp.charAt(k - 1) == '*' || exp.charAt(k - 1) == '/' || exp.charAt(k - 1) == '^'))
                         c = c == '+' ? 'p' : 'n'; // p: positive, n: negative
 
-                    while(!opStk.isEmpty() && opPriority.get(opStk.peek()) >= opPriority.get(c)) {
-                        if(opPriority.get(opStk.peek()) == 3 && opPriority.get(c) == 3)
+                    while(!opStk.isEmpty() && opStk.peek().charAt(0) !=  '#' && opPriority.get(opStk.peek().charAt(0)) >= opPriority.get(c)) {
+                        if(opPriority.get(opStk.peek().charAt(0)) == 6 && opPriority.get(c) == 6)
                             break;
-                        postfix.add(String.valueOf(opStk.pop()));
+                        postfix.add(opStk.pop());
                     }
-                    opStk.push(c);
+                    opStk.push(String.valueOf(c));
                 } catch (Exception e) {
                     throw new NumberFormatException();
                 }
             }
 
-            // TODO: function style support, e.x. 3 + cos(0.4 * sin(5.2 * (2 + 4.1)) / exp(tan(0.5)))
             // variable or function
             else if(c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
-                StringBuilder varNameBuf = new StringBuilder();
-                final String varName;
+                StringBuilder nameBuf = new StringBuilder();
 
                 while(k < exp.length() && (exp.charAt(k) == '_' || (exp.charAt(k) >= 'a' && exp.charAt(k) <= 'z') || (exp.charAt(k) >= 'A' && exp.charAt(k) <= 'Z'))) {
-                    varNameBuf.append(exp.charAt(k));
+                    nameBuf.append(exp.charAt(k));
                     ++k;
                 }
-                --k;
 
-                varName = varNameBuf.toString();
-                try {
-                    ExactNumber newNum = new ExactNumber(tbv_vars.getItems().stream().filter(obj -> obj.getIdentity().equals(varName)).collect(Collectors.toList()).get(0).getValue().trim());
-                    postfix.add(newNum);
-                } catch(Exception e) {
-                    throw new NoVariableException("No such variable");
+                // variable
+                if(k == exp.length() || exp.charAt(k) != '(') {
+                    --k;
+                    final String varName = nameBuf.toString();
+                    try {
+                        ExactNumber newNum = new ExactNumber(tbv_vars.getItems().stream().filter(obj -> obj.getIdentity().equals(varName)).collect(Collectors.toList()).get(0).getValue().trim());
+                        postfix.add(newNum);
+                    } catch(Exception e) {
+                        throw new NoVariableException("No such variable");
+                    }
+                }
+
+                // function
+                else {
+                    final String funName = nameBuf.toString();
+                    Function func = funcMap.getOrDefault(funName, null);
+                    // no such function
+                    if(func == null)
+                        throw new NoFunctionException("No such function");
+
+                    // add function to operator stack
+                    opStk.push("#" + funName);
                 }
             }
 
@@ -708,9 +785,9 @@ public class NumberPadController {
         }
 
         while(!opStk.isEmpty()) {
-            if(opStk.peek() == '(')
+            if(opStk.peek().equals("("))
                 throw new NumberFormatException();
-            postfix.add(String.valueOf(opStk.pop()));
+            postfix.add(opStk.pop());
         }
 
         /*

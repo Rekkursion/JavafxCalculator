@@ -30,16 +30,18 @@
             <Button fx:id="btn_nine" onAction="#numberPadButtonsClick" text="9" GridPane.columnIndex="2" GridPane.rowIndex="4" prefHeight="60" prefWidth="60" />
             <Button fx:id="btn_zero" onAction="#numberPadButtonsClick" text="0" GridPane.columnIndex="0" GridPane.rowIndex="5" GridPane.columnSpan="2" prefHeight="60" prefWidth="130" />
             <Button fx:id="btn_dot" onAction="#numberPadButtonsClick" text="." GridPane.columnIndex="2" GridPane.rowIndex="5" prefHeight="60" prefWidth="60" />
-            <Button fx:id="btn_calc" onAction="#numberPadButtonsClick" text="=" GridPane.columnIndex="3" GridPane.rowIndex="4" GridPane.rowSpan="2" prefHeight="130" prefWidth="60" />
+            <Button fx:id="btn_calc" onAction="#numberPadButtonsClick" text="=" GridPane.columnIndex="4" GridPane.rowIndex="6" prefHeight="60" prefWidth="60" />
             <Button fx:id="btn_div" onAction="#numberPadButtonsClick" text="/" GridPane.columnIndex="1" GridPane.rowIndex="1" prefHeight="60" prefWidth="60" />
             <Button fx:id="btn_multi" onAction="#numberPadButtonsClick" text="*" GridPane.columnIndex="2" GridPane.rowIndex="1" prefHeight="60" prefWidth="60" />
             <Button fx:id="btn_minus" onAction="#numberPadButtonsClick" text="-" GridPane.columnIndex="3" GridPane.rowIndex="1" prefHeight="60" prefWidth="60" />
             <Button fx:id="btn_plus" onAction="#numberPadButtonsClick" text="+" GridPane.columnIndex="4" GridPane.rowIndex="1" prefHeight="60" prefWidth="60" />
+            <Button fx:id="btn_real_power" onAction="#numberPadButtonsClick" text="^" GridPane.columnIndex="3" GridPane.rowIndex="2" prefHeight="60" prefWidth="60" />
+            <Button fx:id="btn_factorial" onAction="#numberPadButtonsClick" text="!" GridPane.columnIndex="4" GridPane.rowIndex="2" prefHeight="60" prefWidth="60" />
             <Button fx:id="btn_parens" onAction="#numberPadButtonsClick" text="()" GridPane.columnIndex="0" GridPane.rowIndex="1" prefHeight="60" prefWidth="60" maxWidth="60" />
-            <Button fx:id="btn_backspace" onAction="#numberPadButtonsClick" text="Back" GridPane.columnIndex="3" GridPane.rowIndex="2" prefHeight="60" prefWidth="60" />
-            <Button fx:id="btn_clear" onAction="#numberPadButtonsClick" text="Clear" GridPane.columnIndex="4" GridPane.rowIndex="2" prefHeight="60" prefWidth="60" />
+            <Button fx:id="btn_backspace" onAction="#numberPadButtonsClick" text="Back" GridPane.columnIndex="2" GridPane.rowIndex="6" prefHeight="60" prefWidth="60" />
+            <Button fx:id="btn_clear" onAction="#numberPadButtonsClick" text="Clear" GridPane.columnIndex="3" GridPane.rowIndex="6" prefHeight="60" prefWidth="60" />
 
-            <Button fx:id="btn_save_as_var" onAction="#saveAsVarButtonClick" text="Save as var" GridPane.columnIndex="3" GridPane.rowIndex="3" GridPane.columnSpan="2" prefHeight="60" prefWidth="130" />
+            <Button fx:id="btn_save_as_var" onAction="#saveAsVarButtonClick" text="Save as var" GridPane.columnIndex="3" GridPane.rowIndex="5" GridPane.columnSpan="2" prefHeight="60" prefWidth="130" />
             <Button fx:id="btn_undo" onAction="#btnUndoRedoClick" text="Undo" GridPane.columnIndex="0" GridPane.rowIndex="6" prefHeight="60" prefWidth="60" />
             <Button fx:id="btn_redo" onAction="#btnUndoRedoClick" text="Redo" GridPane.columnIndex="1" GridPane.rowIndex="6" prefHeight="60" prefWidth="60" />
         </GridPane>
