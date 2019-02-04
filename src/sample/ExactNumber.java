@@ -6,6 +6,8 @@ import java.util.FormatterClosedException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.lang.Math.PI;
+
 public class ExactNumber {
     private static int decimalPrecision = 5;
     private static boolean showRedundantDecimal = false;
@@ -549,8 +551,28 @@ public class ExactNumber {
 
     // sin
     public static ExactNumber sin(ExactNumber x) throws ArithmeticException {
-        // TODO
-        return null;
+        // restrict x to the range of [0, 2*pi]
+        ExactNumber ex_2pi = new ExactNumber(String.valueOf(2.0 * Math.PI));
+        ExactNumber times = toInteger(divide(x, ex_2pi));
+        ExactNumber substrahend = multiple(ex_2pi, times);
+        x = minus(x, substrahend);
+
+        final int taylorJingdu = 50;
+        boolean isNegative = true;
+        ExactNumber ret = new ExactNumber(x);
+        ExactNumber x_pow = new ExactNumber(x);
+
+        for(int jd = 3; jd < taylorJingdu; jd += 2) {
+            x_pow = multiple(multiple(x_pow, x), x);
+            String nume = x_pow.numerator;
+            String deno = PositiveIntegerOperation.multiple(x_pow.denominator, FactorialTable.factorialTable[jd]);
+            ExactNumber next = new ExactNumber(PositiveIntegerOperation.divide(nume, deno, ExactNumber.getDecimalPrecision(), true));
+
+            ret = isNegative ? minus(ret, next) : add(ret, next);
+            isNegative = !isNegative;
+        }
+
+        return ret;
     }
 
     // is zero
@@ -566,6 +588,109 @@ public class ExactNumber {
             throw new ArithmeticException();
         x.reduct_update();
         return x.denominator.equals("1");
+    }
+
+    // to integer
+    public static ExactNumber toInteger(ExactNumber x) throws ArithmeticException {
+        String frc = x.fractionStyle;
+        if(frc.length() == 0)
+            throw new ArithmeticException();
+
+        boolean isNegative = false;
+        if(frc.charAt(0) == '-') {
+            isNegative = true;
+            frc = frc.substring(1);
+        }
+
+        int dotIdx = frc.indexOf('.');
+        // originally is an integer
+        if(dotIdx == -1)
+            return new ExactNumber(frc, "1", isNegative);
+        // originally has the decimal point
+        return new ExactNumber(frc.substring(0, dotIdx), "1", isNegative);
+    }
+
+    // compare two exact number
+    public static int compareTwo(ExactNumber a, ExactNumber b) throws ArithmeticException {
+        // a = b = 0
+        if(ExactNumber.isZero(a) && ExactNumber.isZero(b))
+            return 0;
+        // a < 0, b >= 0 -> a < b
+        if(a.isNeg && !b.isNeg)
+            return -1;
+        // a >= 0, b < 0 -> a > b
+        if(!a.isNeg && b.isNeg)
+            return 1;
+
+        String frc_a = a.fractionStyle;
+        String frc_b = b.fractionStyle;
+
+        try {
+            // if(a.isNeg && b.isNeg)
+            if(a.isNeg) {
+                frc_a = frc_a.substring(1);
+                frc_b = frc_b.substring(1);
+            }
+
+            int dotIdx_a = frc_a.indexOf('.');
+            int dotIdx_b = frc_b.indexOf('.');
+            String intPart_a = "";
+            String intPart_b = "";
+            String frcPart_a = "";
+            String frcPart_b = "";
+
+            if(dotIdx_a == -1) {
+                intPart_a = frc_a;
+                frcPart_a = "0";
+            } else {
+                intPart_a = frc_a.substring(0, dotIdx_a);
+                frcPart_a = frc_a.substring(dotIdx_a + 1);
+            }
+            if(dotIdx_b == -1) {
+                intPart_b = frc_b;
+                frcPart_b = "0";
+            } else {
+                intPart_b = frc_b.substring(0, dotIdx_b);
+                frcPart_b = frc_b.substring(dotIdx_b + 1);
+            }
+            intPart_a = PositiveIntegerOperation.removePreZero(intPart_a);
+            intPart_b = PositiveIntegerOperation.removePreZero(intPart_b);
+            frcPart_a = PositiveIntegerOperation.removePostZero(frcPart_a);
+            frcPart_b = PositiveIntegerOperation.removePostZero(frcPart_b);
+
+            // len of int part: a < b
+            if(intPart_a.length() < intPart_b.length())
+                return !a.isNeg ? -1 : 1;
+            // len of int part: a > b
+            else if(intPart_a.length() > intPart_b.length())
+                return !a.isNeg ? 1 : -1;
+            else {
+                for(int k = 0; k < intPart_a.length(); ++k) {
+                    if(intPart_a.charAt(k) < intPart_b.charAt(k))
+                        return !a.isNeg ? -1 : 1;
+                    else if(intPart_a.charAt(k) > intPart_a.charAt(k))
+                        return !a.isNeg ? 1 : -1;
+                }
+
+                // int parts are the same
+                int idx = 0;
+                for(; idx < frcPart_a.length() && idx < frcPart_b.length(); ++idx) {
+                    if(frcPart_a.charAt(idx) < frcPart_b.charAt(idx))
+                        return !a.isNeg ? -1 : 1;
+                    else if(frcPart_a.charAt(idx) > frcPart_b.charAt(idx))
+                        return !a.isNeg ? 1 : -1;
+                }
+
+                if(idx == frcPart_a.length() && idx == frcPart_b.length())
+                    return 0;
+                else if(idx == frcPart_a.length())
+                    return !a.isNeg ? -1 : 1;
+                else
+                    return !a.isNeg ? 1 : -1;
+            }
+        } catch (Exception e) {
+            throw new ArithmeticException();
+        }
     }
 
     // ===================================================================================

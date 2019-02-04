@@ -573,7 +573,6 @@ public class NumberPadController {
                             numberList.add(numStk.pop());
                         }
 
-                        // FIXME: may have exception
                         ExactNumber result = func.call(numberList);
                         numStk.push(result);
                     }

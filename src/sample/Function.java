@@ -32,10 +32,12 @@ public class Function {
 
     public boolean getIsBuiltIn() { return this.isBuiltIn.get(); }
 
-    public ExactNumber call(List<ExactNumber> numbers) {
-        // TODO
-        if(identity.equals("sin")) {
-
+    public ExactNumber call(List<ExactNumber> numbers) throws NumberFormatException, ArithmeticException {
+        try {
+            if(identity.get().equals("sin"))
+                return ExactNumber.sin(numbers.get(0));
+        } catch (Exception e) {
+            throw new NumberFormatException();
         }
 
         return null;
