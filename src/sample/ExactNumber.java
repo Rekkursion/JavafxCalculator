@@ -549,7 +549,7 @@ public class ExactNumber {
         return new ExactNumber(retString);
     }
 
-    // sin
+    // sine
     public static ExactNumber sin(ExactNumber x) throws ArithmeticException {
         // restrict x to the range of [0, 2*pi]
         ExactNumber ex_2pi = new ExactNumber(String.valueOf(2.0 * Math.PI));

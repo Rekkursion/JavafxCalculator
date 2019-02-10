@@ -36,6 +36,9 @@ public class Function {
         try {
             if(identity.get().equals("sin"))
                 return ExactNumber.sin(numbers.get(0));
+            // TODO
+            else if(identity.get().equals("cos"))
+                return new ExactNumber("0");
         } catch (Exception e) {
             throw new NumberFormatException();
         }
